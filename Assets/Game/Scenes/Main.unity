@@ -740,8 +740,11 @@ MonoBehaviour:
   moveDuration: 0.12
   fontSizePercent: 0.65
   minFontSize: 16
-  maxFontSize: 128
+  maxFontSize: 256
   shuffleMoves: 120
+  shakeAmplitude: 7
+  shakeDuration: 0.35
+  shakeFrequency: 28
   movesText: {fileID: 0}
   statusText: {fileID: 0}
   shuffleButton: {fileID: 0}
@@ -788,6 +791,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   slideTileSound: {fileID: 8300000, guid: 8ddfb07cb43808842b5c98b5a3fb7c1c, type: 3}
   correctTileSound: {fileID: 8300000, guid: be0ecdbd6bc19864eaf33b160efe0bb2, type: 3}
+  highlightShownSound: {fileID: 8300000, guid: b03d8bab5e027e34f8786c2fd3232191, type: 3}
 --- !u!82 &1047193728
 AudioSource:
   m_ObjectHideFlags: 0

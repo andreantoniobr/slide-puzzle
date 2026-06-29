@@ -6,6 +6,7 @@ public class AudioManager : MonoBehaviour
 {
     [SerializeField] private AudioClip slideTileSound;
     [SerializeField] private AudioClip correctTileSound;
+    [SerializeField] private AudioClip highlightShownSound;
 
 
     private AudioSource audioSource;
@@ -25,13 +26,17 @@ public class AudioManager : MonoBehaviour
     private void SubscribeInEvents()
     {
         NumberPuzzleManager.SlidedTileEvent += OnSlidedTile;
+        NumberPuzzleManager.HighlightShownEvent += OnHighlightShown;
         NumberTile.TileCorrectPositionEvent += OnTileCorrectPosition;
     }
 
+    
+
     private void UnsubscribeInEvents()
     {
-        NumberPuzzleManager.SlidedTileEvent += OnSlidedTile;
-        NumberTile.TileCorrectPositionEvent += OnTileCorrectPosition;
+        NumberPuzzleManager.SlidedTileEvent -= OnSlidedTile;
+        NumberPuzzleManager.HighlightShownEvent -= OnHighlightShown;
+        NumberTile.TileCorrectPositionEvent -= OnTileCorrectPosition;
     }
 
     private void OnSlidedTile()
@@ -42,5 +47,10 @@ public class AudioManager : MonoBehaviour
     private void OnTileCorrectPosition()
     {
         audioSource.PlayOneShot(correctTileSound);
+    }
+
+    private void OnHighlightShown()
+    {
+        audioSource.PlayOneShot(highlightShownSound);
     }
 }
