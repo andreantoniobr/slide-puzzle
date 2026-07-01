@@ -1,20 +1,14 @@
 using System;
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
-public class AudioManager : MonoBehaviour
+public class SFXController : AudioMain
 {
     [SerializeField] private AudioClip slideTileSound;
     [SerializeField] private AudioClip correctTileSound;
     [SerializeField] private AudioClip highlightShownSound;
-
-
-    private AudioSource audioSource;
-
     
     private void Awake()
-    {
-        audioSource = GetComponent<AudioSource>();
+    {        
         SubscribeInEvents();
     } 
 
@@ -28,9 +22,7 @@ public class AudioManager : MonoBehaviour
         NumberPuzzleManager.SlidedTileEvent += OnSlidedTile;
         NumberPuzzleManager.HighlightShownEvent += OnHighlightShown;
         NumberTile.TileCorrectPositionEvent += OnTileCorrectPosition;
-    }
-
-    
+    }    
 
     private void UnsubscribeInEvents()
     {
@@ -41,16 +33,16 @@ public class AudioManager : MonoBehaviour
 
     private void OnSlidedTile()
     {
-        audioSource.PlayOneShot(slideTileSound);
+        PlayAudio(slideTileSound);
     }
 
     private void OnTileCorrectPosition()
     {
-        audioSource.PlayOneShot(correctTileSound);
+        PlayAudio(correctTileSound);
     }
 
     private void OnHighlightShown()
     {
-        audioSource.PlayOneShot(highlightShownSound);
+        PlayAudio(highlightShownSound);
     }
 }
