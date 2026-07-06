@@ -7,6 +7,7 @@ public enum OverlayName
     Pause,
     Start,
     Settings,
+    Victory,
 }
 
 [System.Serializable]

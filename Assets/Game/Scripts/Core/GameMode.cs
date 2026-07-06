@@ -7,17 +7,13 @@ using UnityEngine.SceneManagement;
 public class GameMode : MonoBehaviour
 {       
     [SerializeField] private HUDManager hudManager;
-   
+    [SerializeField] private NumberPuzzleManager puzzleManager;
 
-    [Header("Music")]
-    
-    [SerializeField] private HUDAudioController HUDAudioController;   
-
-    
+    [Header("Victory")]
+    [SerializeField] private float victoryDelaySeconds = 0.6f; 
 
     private bool isGameStarted = false;
     private bool isGamePaused = false;
-
 
 
     public bool IsGameStarted => isGameStarted;
@@ -27,7 +23,8 @@ public class GameMode : MonoBehaviour
     private void Awake()
     {  
         hudManager.SetActiveOverlay(OverlayName.MainHud);
-    }
+        NumberPuzzleManager.SolvedPuzzleEvent += OnSolvedPuzzed;
+    }    
 
     private void Pause()
     {
@@ -41,11 +38,19 @@ public class GameMode : MonoBehaviour
         hudManager.SetActiveOverlay(OverlayName.MainHud);
     }
 
-    
+    private void OnSolvedPuzzed(int movements, int time)
+    {
+        StartCoroutine(ShowVictoryDelayed());
+    }
+
+    private IEnumerator ShowVictoryDelayed()
+    {
+        yield return new WaitForSeconds(victoryDelaySeconds); // ajuste ao seu gosto
+        hudManager.SetActiveOverlay(OverlayName.Victory);
+    }    
 
     public void PauseAndResumeGame()
-    {
-        HUDAudioController.PlayButtonPressSound();
+    {        
         if (isGameStarted)
         {
             isGamePaused = !isGamePaused;
@@ -58,6 +63,16 @@ public class GameMode : MonoBehaviour
                 Resume();
             }
         }        
+    }
+
+    public void RestartGame()
+    {      
+        Time.timeScale = 1f;
+        isGamePaused = false;
+        isGameStarted = true;
+
+        hudManager.SetActiveOverlay(OverlayName.MainHud);
+        puzzleManager.Shuffle();
     }
 
     public void QuitGame()

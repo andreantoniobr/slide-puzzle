@@ -6,6 +6,7 @@ public class SFXController : AudioMain
     [SerializeField] private AudioClip slideTileSound;
     [SerializeField] private AudioClip correctTileSound;
     [SerializeField] private AudioClip highlightShownSound;
+    [SerializeField] private AudioClip victorySound;
     
     private void Awake()
     {        
@@ -22,6 +23,7 @@ public class SFXController : AudioMain
         NumberPuzzleManager.SlidedTileEvent += OnSlidedTile;
         NumberPuzzleManager.HighlightShownEvent += OnHighlightShown;
         NumberTile.TileCorrectPositionEvent += OnTileCorrectPosition;
+        NumberPuzzleManager.SolvedPuzzleEvent += OnSolvedPuzzle;
     }    
 
     private void UnsubscribeInEvents()
@@ -29,6 +31,7 @@ public class SFXController : AudioMain
         NumberPuzzleManager.SlidedTileEvent -= OnSlidedTile;
         NumberPuzzleManager.HighlightShownEvent -= OnHighlightShown;
         NumberTile.TileCorrectPositionEvent -= OnTileCorrectPosition;
+        NumberPuzzleManager.SolvedPuzzleEvent -= OnSolvedPuzzle;
     }
 
     private void OnSlidedTile()
@@ -44,5 +47,10 @@ public class SFXController : AudioMain
     private void OnHighlightShown()
     {
         PlayAudio(highlightShownSound);
+    }
+
+    private void OnSolvedPuzzle(int time, int movements)
+    {
+        PlayAudio(victorySound);
     }
 }

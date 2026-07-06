@@ -7,13 +7,13 @@ public class AudioToggleDisplay : MonoBehaviour
 
     [Header("Music Toggle")]
     [SerializeField] private TextMeshProUGUI musicToggleText;
-    [SerializeField] private string musicOnText = "Music: ON";
-    [SerializeField] private string musicOffText = "Music: OFF";
+    [SerializeField] private string musicOnText = "Music ON";
+    [SerializeField] private string musicOffText = "Music OFF";
 
     [Header("SFX Toggle")]
     [SerializeField] private TextMeshProUGUI sfxToggleText;
-    [SerializeField] private string sfxOnText = "SFX: ON";
-    [SerializeField] private string sfxOffText = "SFX: OFF";
+    [SerializeField] private string sfxOnText = "SFX ON";
+    [SerializeField] private string sfxOffText = "SFX OFF";
 
     private void OnEnable()
     {
