@@ -1,16 +1,20 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class GameMode : MonoBehaviour
 {       
     [SerializeField] private HUDManager hudManager;
     [SerializeField] private LevelManager levelManager;
+    [SerializeField] private FadeController fadeController;
 
     [Header("Victory")]
     [SerializeField] private float victoryDelaySeconds = 0.6f;
+
+    [Header("Transição de Nível")]
+    [SerializeField] private AudioSource transitionAudioSource;
+    [SerializeField] private AudioClip   levelTransitionSound;
+    [SerializeField] private AudioClip   restartSound;
 
     private bool isGameStarted = true;
     private bool isGamePaused = false;
@@ -64,22 +68,31 @@ public class GameMode : MonoBehaviour
 
     public void RestartGame()
     {
-        Time.timeScale = 1f;
-        isGamePaused = false;
-        isGameStarted = true;
-
-        hudManager.SetActiveOverlay(OverlayName.MainHud);
-        levelManager.RestartLevel();
+        StartCoroutine(TransitionAndExecute(restartSound, () => levelManager.RestartLevel()));
     }
 
     public void NextLevel()
     {
+        StartCoroutine(TransitionAndExecute(levelTransitionSound, () => levelManager.GoToNextLevel()));
+    }
+
+    private IEnumerator TransitionAndExecute(AudioClip sound, Action action)
+    {
+        if (sound != null && transitionAudioSource != null)
+            transitionAudioSource.PlayOneShot(sound);
+
+        if (fadeController != null)
+            yield return StartCoroutine(fadeController.FadeOut());
+
         Time.timeScale = 1f;
         isGamePaused = false;
         isGameStarted = true;
 
         hudManager.SetActiveOverlay(OverlayName.MainHud);
-        levelManager.GoToNextLevel();
+        action?.Invoke();
+
+        if (fadeController != null)
+            yield return StartCoroutine(fadeController.FadeIn());
     }
 
     public void QuitGame()
