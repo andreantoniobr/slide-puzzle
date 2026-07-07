@@ -7,24 +7,27 @@ using UnityEngine.SceneManagement;
 public class GameMode : MonoBehaviour
 {       
     [SerializeField] private HUDManager hudManager;
-    [SerializeField] private NumberPuzzleManager puzzleManager;
+    [SerializeField] private LevelManager levelManager;
 
     [Header("Victory")]
-    [SerializeField] private float victoryDelaySeconds = 0.6f; 
+    [SerializeField] private float victoryDelaySeconds = 0.6f;
 
-    private bool isGameStarted = false;
+    private bool isGameStarted = true;
     private bool isGamePaused = false;
-
 
     public bool IsGameStarted => isGameStarted;
     public bool IsGamePaused => isGamePaused;
-
 
     private void Awake()
     {  
         hudManager.SetActiveOverlay(OverlayName.MainHud);
         NumberPuzzleManager.SolvedPuzzleEvent += OnSolvedPuzzed;
-    }    
+    }
+
+    private void OnDestroy()
+    {
+        NumberPuzzleManager.SolvedPuzzleEvent -= OnSolvedPuzzed;
+    }
 
     private void Pause()
     {
@@ -45,34 +48,38 @@ public class GameMode : MonoBehaviour
 
     private IEnumerator ShowVictoryDelayed()
     {
-        yield return new WaitForSeconds(victoryDelaySeconds); // ajuste ao seu gosto
+        yield return new WaitForSeconds(victoryDelaySeconds);
         hudManager.SetActiveOverlay(OverlayName.Victory);
-    }    
+    }
 
     public void PauseAndResumeGame()
-    {        
+    {
         if (isGameStarted)
         {
             isGamePaused = !isGamePaused;
-            if (isGamePaused)
-            {
-                Pause();
-            }
-            else
-            {
-                Resume();
-            }
+            if (isGamePaused) Pause();
+            else Resume();
         }        
     }
 
     public void RestartGame()
-    {      
+    {
         Time.timeScale = 1f;
         isGamePaused = false;
         isGameStarted = true;
 
         hudManager.SetActiveOverlay(OverlayName.MainHud);
-        puzzleManager.Shuffle();
+        levelManager.RestartLevel();
+    }
+
+    public void NextLevel()
+    {
+        Time.timeScale = 1f;
+        isGamePaused = false;
+        isGameStarted = true;
+
+        hudManager.SetActiveOverlay(OverlayName.MainHud);
+        levelManager.GoToNextLevel();
     }
 
     public void QuitGame()

@@ -57,6 +57,9 @@ public class NumberPuzzleManager : MonoBehaviour
     // NOVO: controla o tempo de jogo
     private float puzzleStartTime;
 
+    // NOVO: guarda a posição inicial de cada tile para permitir restart exato
+    private int[] initialTileIndexes;
+
     private Dictionary<NumberTile, Coroutine> activeShakes =
         new Dictionary<NumberTile, Coroutine>();
 
@@ -69,8 +72,12 @@ public class NumberPuzzleManager : MonoBehaviour
         if (shuffleButton != null) shuffleButton.onClick.AddListener(Shuffle);
         if (solveButton   != null) solveButton.onClick.AddListener(SolveInstant);
 
-        BuildBoard();
-        Shuffle();
+        // Se não houver LevelManager na cena, mantém o comportamento antigo (útil pra testar isolado)
+        if (FindAnyObjectByType<LevelManager>() == null)
+        {
+            BuildBoard();
+            Shuffle();
+        }
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -414,11 +421,97 @@ public class NumberPuzzleManager : MonoBehaviour
         RefreshAllColors();
         UpdateMovesUI();
 
-        // NOVO: inicia o timer após o embaralhamento
-        puzzleStartTime = Time.time;
+        SaveInitialState();
 
-        // NOVO: avisa que uma fase começou (música, etc.)
+        puzzleStartTime = Time.time;
         PuzzleStartedEvent?.Invoke();
+    }
+
+    // NOVO: embaralha de forma determinística (mesmo seed = mesmo resultado)
+    public void ShuffleDeterministic(int seed)
+    {
+        UnityEngine.Random.State previousState = UnityEngine.Random.state;
+        UnityEngine.Random.InitState(seed);
+        Shuffle();
+        UnityEngine.Random.state = previousState; // não polui o RNG global
+    }
+
+    // NOVO: carrega um nível a partir de um LevelConfig (feito à mão ou procedural)
+    public void LoadLevel(LevelConfig config)
+    {
+        gridSize = Mathf.Clamp(config.gridSize, 2, 8);
+        if (config.shuffleMoves > 0) shuffleMoves = config.shuffleMoves;
+
+        BuildBoard(); // recria os tiles no tamanho certo do nível
+
+        if (config.customBoard != null && config.customBoard.Length == gridSize * gridSize)
+            ApplyCustomArrangement(config.customBoard);
+        else
+            ShuffleDeterministic(config.seed);
+    }
+
+    private void ApplyCustomArrangement(int[] arrangement)
+    {
+        moveCount    = 0;
+        puzzleSolved = false;
+        ClearHighlights();
+        if (statusText != null) statusText.text = "";
+
+        for (int i = 0; i < totalTiles; i++)
+        {
+            int idx = arrangement[i];
+            tiles[i].currentIndex = idx;
+            board[idx] = i;
+
+            if (tiles[i].isEmpty) emptyIndex = idx;
+        }
+
+        RefreshVisualPositions();
+        RefreshAllColors();
+        UpdateMovesUI();
+
+        SaveInitialState();
+
+        puzzleStartTime = Time.time;
+        PuzzleStartedEvent?.Invoke();
+    }
+
+    // NOVO: reinicia o nível atual EXATAMENTE como estava no começo (sem re-embaralhar)
+    public void RestartLevel()
+    {
+        if (initialTileIndexes == null || initialTileIndexes.Length != totalTiles)
+        {
+            Shuffle(); // fallback de segurança, não deveria acontecer em uso normal
+            return;
+        }
+
+        moveCount    = 0;
+        puzzleSolved = false;
+        ClearHighlights();
+        if (statusText != null) statusText.text = "";
+
+        for (int i = 0; i < totalTiles; i++)
+        {
+            int idx = initialTileIndexes[i];
+            tiles[i].currentIndex = idx;
+            board[idx] = i;
+
+            if (tiles[i].isEmpty) emptyIndex = idx;
+        }
+
+        RefreshVisualPositions();
+        RefreshAllColors();
+        UpdateMovesUI();
+
+        puzzleStartTime = Time.time;
+        PuzzleStartedEvent?.Invoke();
+    }
+
+    private void SaveInitialState()
+    {
+        initialTileIndexes = new int[totalTiles];
+        for (int i = 0; i < totalTiles; i++)
+            initialTileIndexes[i] = tiles[i].currentIndex;
     }
 
     private void SwapLogical(int a, int b)
