@@ -139,9 +139,9 @@ public class NumberPuzzleManager : MonoBehaviour
     //  Input — Clique
     // ────────────────────────────────────────────────────────────────
 
-    public void OnTileClicked(NumberTile tile)
+    public bool OnTileClicked(NumberTile tile)
     {
-        if (isAnimating || puzzleSolved) return;
+        if (isAnimating || puzzleSolved) return true; // ignora, mas não é "inválido"
 
         int tileIdx = tile.currentIndex;
 
@@ -149,7 +149,7 @@ public class NumberPuzzleManager : MonoBehaviour
         {
             ClearHighlights();
             StartCoroutine(DoMove(tile, tileIdx));
-            return;
+            return true;
         }
 
         List<NumberTile> chain = BuildMoveChain(tileIdx);
@@ -157,10 +157,11 @@ public class NumberPuzzleManager : MonoBehaviour
         {
             ClearHighlights();
             StartCoroutine(DoChainMove(chain));
-            return;
+            return true;
         }
 
         ShowMovableHighlights();
+        return false; // NOVO: avisa que este clique não moveu nada
     }
 
     // ────────────────────────────────────────────────────────────────

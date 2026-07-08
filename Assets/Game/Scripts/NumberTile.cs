@@ -55,11 +55,17 @@ public class NumberTile : MonoBehaviour,
     [SerializeField] private Color TileColor        = new Color(1f,    1f,    1f,    1f);
     [SerializeField] private Color TileCorrectColor = new Color(0.64f, 1f,    0.35f, 1f);
 
+    
     [Header("Text Color")]
     [SerializeField] private Color TextTileColor        = new Color(0.34f, 0.20f, 0.125f, 1f);
-    [SerializeField] private Color TextTileCorrectColor = new Color(0.64f, 1f,    0.35f,  1f);
-
+    [SerializeField] private Color TextTileCorrectColor = new Color(0.64f, 1f,    0.35f,  1f); 
     private static readonly Color HighlightColor = new Color(1f, 0.85f, 0.20f, 0.55f);
+
+    [Header("Feedback de Movimento Inválido")]
+    [SerializeField] private float invalidMoveShrinkFactor = 0.85f;
+    [SerializeField] private float invalidMoveDuration = 0.15f;
+
+    private bool isPlayingInvalidFeedback;
 
     // ────────────────────────────────────────────────────────────────
     //  Eventos públicos
@@ -178,16 +184,47 @@ public class NumberTile : MonoBehaviour,
 
         if (deltaLength < SWIPE_THRESHOLD)
         {
-            // ── Clique/Tap ───────────────────────────────────────────
-            manager.OnTileClicked(this);
+            bool moved = manager.OnTileClicked(this);
+            if (!moved) PlayInvalidMoveFeedback();
         }
         else
         {
-            // ── Swipe ────────────────────────────────────────────────
             DragDirection swipeDir = GetSwipeDirection(delta);
-            manager.TryMove(this, swipeDir);
-            // TryMove retornar false não requer ação: a peça nunca se moveu.
+            bool moved = manager.TryMove(this, swipeDir);
+            if (!moved) PlayInvalidMoveFeedback();
         }
+    }
+
+    public void PlayInvalidMoveFeedback()
+    {
+        if (isAnimating || isPlayingInvalidFeedback) return;
+        StartCoroutine(InvalidMoveBounce());
+    }
+
+    private IEnumerator InvalidMoveBounce()
+    {
+        isPlayingInvalidFeedback = true;
+
+        Vector3 originalScale = transform.localScale;
+        Vector3 shrunkScale   = originalScale * invalidMoveShrinkFactor;
+        float   half          = invalidMoveDuration * 0.5f;
+
+        yield return ScaleOverTime(originalScale, shrunkScale, half);
+        yield return ScaleOverTime(shrunkScale, originalScale, half);
+
+        isPlayingInvalidFeedback = false;
+    }
+
+    private IEnumerator ScaleOverTime(Vector3 from, Vector3 to, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            transform.localScale = Vector3.Lerp(from, to, elapsed / duration);
+            yield return null;
+        }
+        transform.localScale = to;
     }
 
     // ────────────────────────────────────────────────────────────────

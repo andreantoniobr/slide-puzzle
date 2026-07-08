@@ -44,7 +44,7 @@ Material:
     - _AngleOffset: 0
     - _ArmRatio: 0.5
     - _ArmSharpness: 60
-    - _Arms: 12
+    - _Arms: 10
     - _EnableExternalAlpha: 0
     - _InnerBlur: 0.05
     - _InnerRadius: 0

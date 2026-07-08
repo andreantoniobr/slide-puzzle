@@ -433,6 +433,9 @@ MonoBehaviour:
   correctIndex: 0
   currentIndex: 0
   isEmpty: 0
+  TileColor: {r: 1, g: 1, b: 1, a: 1}
   TileCorrectColor: {r: 0.69411767, g: 1, b: 0.7607843, a: 1}
   TextTileColor: {r: 0.34901962, g: 0.20392159, b: 0.12941177, a: 1}
   TextTileCorrectColor: {r: 0.039215688, g: 0.1882353, b: 0.16470589, a: 1}
+  invalidMoveShrinkFactor: 0.95
+  invalidMoveDuration: 0.15
