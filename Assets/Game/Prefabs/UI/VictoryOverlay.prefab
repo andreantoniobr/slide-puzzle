@@ -1129,7 +1129,7 @@ RectTransform:
   m_GameObject: {fileID: 4744419084585627982}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.25, y: 1.25, z: 1}
+  m_LocalScale: {x: 1.15, y: 1.15, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2476649460467252634}
@@ -1588,6 +1588,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1724431398136496875}
   - component: {fileID: 3081551281426931773}
+  - component: {fileID: 6960411361994860453}
   m_Layer: 5
   m_Name: VictoryOverlay
   m_TagString: Untagged
@@ -1633,6 +1634,21 @@ MonoBehaviour:
   confettiSystems:
   - {fileID: 8662143515724334993}
   restartOnEnable: 1
+--- !u!114 &6960411361994860453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6163651958080603072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 829d09c187d67a241b277bdbf1cf7df6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HUDScaler
+  hudRoot: {fileID: 7477094136228023028}
+  portraitScale: 1.5
+  landscapeScale: 1
 --- !u!1 &6700427306584088349
 GameObject:
   m_ObjectHideFlags: 0

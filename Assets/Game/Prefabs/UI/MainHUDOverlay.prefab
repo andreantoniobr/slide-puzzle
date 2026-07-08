@@ -142,6 +142,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9204612211039147213}
   - component: {fileID: 4238712474989704199}
+  - component: {fileID: 5763556823666989809}
   m_Layer: 5
   m_Name: MainHUDOverlay
   m_TagString: Untagged
@@ -177,3 +178,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8308287666515640934}
   m_CullTransparentMesh: 1
+--- !u!114 &5763556823666989809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8308287666515640934}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 829d09c187d67a241b277bdbf1cf7df6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HUDScaler
+  hudRoot: {fileID: 8555359671999056791}
+  portraitScale: 1.3
+  landscapeScale: 1

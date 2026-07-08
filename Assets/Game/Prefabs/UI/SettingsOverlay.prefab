@@ -1837,7 +1837,7 @@ RectTransform:
   m_GameObject: {fileID: 4744419084585627982}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.3, y: 1.3, z: 1}
+  m_LocalScale: {x: 1.15, y: 1.15, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2476649460467252634}
@@ -2184,8 +2184,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 29, y: 22}
-  m_SizeDelta: {x: 65, y: 65}
+  m_AnchoredPosition: {x: 29, y: 38}
+  m_SizeDelta: {x: 80, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1848319990676756871
 CanvasRenderer:
@@ -2840,6 +2840,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1724431398136496875}
   - component: {fileID: 5035893380468742694}
+  - component: {fileID: 8263653606774165382}
   m_Layer: 5
   m_Name: SettingsOverlay
   m_TagString: Untagged
@@ -2886,6 +2887,21 @@ MonoBehaviour:
   mainVolumeSlider: {fileID: 7720537076261445476}
   musicVolumeSlider: {fileID: 3138068663608077813}
   SFXVolumeSlider: {fileID: 2062412681216976937}
+--- !u!114 &8263653606774165382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6163651958080603072}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 829d09c187d67a241b277bdbf1cf7df6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HUDScaler
+  hudRoot: {fileID: 7477094136228023028}
+  portraitScale: 1.5
+  landscapeScale: 1
 --- !u!1 &6370029709326585769
 GameObject:
   m_ObjectHideFlags: 0
