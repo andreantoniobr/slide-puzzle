@@ -31,8 +31,17 @@ public class GameAudioManager : MonoBehaviour
         set => _audioData = value;
     }
 
+    public static GameAudioManager Instance { get; private set; }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
+
     public bool IsMusicEnabled => audioData.MusicEnabled;
     public bool IsSFXEnabled => audioData.SFXEnabled;
+
+    
 
     public static event Action<bool> OnMusicToggled;
     public static event Action<bool> OnSFXToggled;
@@ -112,5 +121,12 @@ public class GameAudioManager : MonoBehaviour
         SaveAudioData(audioData);
         OnMusicToggled?.Invoke(audioData.MusicEnabled);
         OnSFXToggled?.Invoke(audioData.SFXEnabled);
+    }
+
+    public void SetTemporaryMute(bool mute)
+    {
+        if (!audioMixer) return;
+
+        audioMixer.SetFloat("MainVolume", mute ? dBMin : Mathf.Lerp(dBMin, dBMax, audioData.MainVolume));
     }
 }

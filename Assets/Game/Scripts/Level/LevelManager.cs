@@ -7,6 +7,8 @@ public class LevelManager : MonoBehaviour
 
     private const string CurrentLevelKey = "CurrentLevelIndex";
 
+    private bool isFirstLoad = true;
+
     private int currentLevelIndex;
 
     public int CurrentLevelNumber => currentLevelIndex + 1;
@@ -25,6 +27,12 @@ public class LevelManager : MonoBehaviour
     {
         LevelConfig config = GetConfigForLevel(currentLevelIndex);
         puzzleManager.LoadLevel(config);
+
+        if (isFirstLoad)
+        {
+            isFirstLoad = false;
+            PokiManager.Instance.NotifyLoadingFinished();
+        }
     }
 
     public void RestartLevel()

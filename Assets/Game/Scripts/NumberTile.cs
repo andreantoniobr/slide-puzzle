@@ -147,6 +147,7 @@ public class NumberTile : MonoBehaviour,
     public void OnPointerDown(PointerEventData eventData)
     {
         if (isAnimating || isEmpty) return;
+        manager.NotifyPlayerInput();
         pointerDownScreenPos = eventData.position;
     }
 

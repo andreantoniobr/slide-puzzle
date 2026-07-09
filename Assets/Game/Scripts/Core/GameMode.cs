@@ -37,16 +37,19 @@ public class GameMode : MonoBehaviour
     {
         Time.timeScale = 0f;
         hudManager.SetActiveOverlay(OverlayName.Pause);
+        PokiManager.Instance.NotifyGameplayStop();
     }
 
     private void Resume()
     {
         Time.timeScale = 1f;
         hudManager.SetActiveOverlay(OverlayName.MainHud);
+        PokiManager.Instance.NotifyGameplayStart();
     }
 
     private void OnSolvedPuzzed(int movements, int time)
     {
+        PokiManager.Instance.NotifyGameplayStop(); // fim de gameplay: nível concluído
         StartCoroutine(ShowVictoryDelayed());
     }
 
@@ -68,12 +71,18 @@ public class GameMode : MonoBehaviour
 
     public void RestartGame()
     {
-        StartCoroutine(TransitionAndExecute(restartSound, () => levelManager.RestartLevel()));
+        PokiManager.Instance.RequestCommercialBreak(() =>
+        {
+            StartCoroutine(TransitionAndExecute(restartSound, () => levelManager.RestartLevel()));
+        });
     }
 
     public void NextLevel()
     {
-        StartCoroutine(TransitionAndExecute(levelTransitionSound, () => levelManager.GoToNextLevel()));
+        PokiManager.Instance.RequestCommercialBreak(() =>
+        {
+            StartCoroutine(TransitionAndExecute(levelTransitionSound, () => levelManager.GoToNextLevel()));
+        });
     }
 
     private IEnumerator TransitionAndExecute(AudioClip sound, Action action)
@@ -107,10 +116,12 @@ public class GameMode : MonoBehaviour
     public void Settings()
     {
         hudManager.SetActiveOverlay(OverlayName.Settings);
+        PokiManager.Instance?.NotifyGameplayStop();
     }
 
     public void CloseSettings()
     {
         hudManager.SetActiveOverlay(OverlayName.MainHud);
+        PokiManager.Instance?.NotifyGameplayStart();
     }
 }

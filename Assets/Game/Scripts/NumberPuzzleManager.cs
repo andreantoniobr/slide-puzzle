@@ -57,6 +57,8 @@ public class NumberPuzzleManager : MonoBehaviour
     // NOVO: controla o tempo de jogo
     private float puzzleStartTime;
 
+    private bool hasFiredFirstInput;
+
     // NOVO: guarda a posição inicial de cada tile para permitir restart exato
     private int[] initialTileIndexes;
 
@@ -78,6 +80,18 @@ public class NumberPuzzleManager : MonoBehaviour
             BuildBoard();
             Shuffle();
         }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Poki
+    // ────────────────────────────────────────────────────────────────
+
+    public void NotifyPlayerInput()
+    {
+        if (hasFiredFirstInput || puzzleSolved) return;
+        hasFiredFirstInput = true;
+
+        PokiManager.Instance?.NotifyGameplayStart();
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -402,6 +416,7 @@ public class NumberPuzzleManager : MonoBehaviour
 
         moveCount    = 0;
         puzzleSolved = false;
+        hasFiredFirstInput = false;
         ClearHighlights();
         if (statusText != null) statusText.text = "";
 
@@ -455,6 +470,7 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         moveCount    = 0;
         puzzleSolved = false;
+        hasFiredFirstInput = false;
         ClearHighlights();
         if (statusText != null) statusText.text = "";
 
@@ -488,6 +504,7 @@ public class NumberPuzzleManager : MonoBehaviour
 
         moveCount    = 0;
         puzzleSolved = false;
+        hasFiredFirstInput = false;
         ClearHighlights();
         if (statusText != null) statusText.text = "";
 
