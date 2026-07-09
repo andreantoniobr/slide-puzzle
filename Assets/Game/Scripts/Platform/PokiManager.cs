@@ -21,9 +21,7 @@ public class PokiManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-#if !UNITY_EDITOR && UNITY_WEBGL
-        PokiUnitySDK.Instance.init();
-#endif
+        PokiUnitySDK.Instance.init(); // funciona no Editor também (mock com 0.5s de delay) e em WebGL real
     }
 
     public void NotifyLoadingFinished()
@@ -31,9 +29,7 @@ public class PokiManager : MonoBehaviour
         if (hasFiredLoadingFinished) return;
         hasFiredLoadingFinished = true;
 
-#if !UNITY_EDITOR && UNITY_WEBGL
         PokiUnitySDK.Instance.gameLoadingFinished();
-#endif
         Debug.Log("[Poki] gameLoadingFinished disparado");
     }
 
@@ -42,9 +38,7 @@ public class PokiManager : MonoBehaviour
         if (isGameplayActive || isAdPlaying) return;
         isGameplayActive = true;
 
-#if !UNITY_EDITOR && UNITY_WEBGL
         PokiUnitySDK.Instance.gameplayStart();
-#endif
         Debug.Log("[Poki] gameplayStart disparado");
     }
 
@@ -53,9 +47,7 @@ public class PokiManager : MonoBehaviour
         if (!isGameplayActive) return;
         isGameplayActive = false;
 
-#if !UNITY_EDITOR && UNITY_WEBGL
         PokiUnitySDK.Instance.gameplayStop();
-#endif
         Debug.Log("[Poki] gameplayStop disparado");
     }
 
@@ -67,17 +59,15 @@ public class PokiManager : MonoBehaviour
         SetGameMuted(true);
         SetInputEnabled(false);
 
-#if !UNITY_EDITOR && UNITY_WEBGL
-        // Só existe ponte com o SDK real dentro de um build WebGL publicado
-        if (PokiUnitySDK.Instance.isInitialized())
-        {
-            PokiUnitySDK.Instance.commercialBreakCallBack = () => FinishCommercialBreak(onComplete);
-            PokiUnitySDK.Instance.commercialBreak();
-            return;
-        }
-#endif
-        // Editor, ou WebGL rodando fora da Poki (SDK não inicializado): segue direto, sem anúncio
+#if UNITY_EDITOR
+        // No Editor, o próprio PokiUnitySDK NÃO dispara commercialBreakCallBack (ver commercialBreakCompleted()).
+        // Então chamamos o fallback diretamente aqui, sem depender do callback do SDK.
+        PokiUnitySDK.Instance.commercialBreak(); // só pra logar/simular no Console
         FinishCommercialBreak(onComplete);
+#else
+        PokiUnitySDK.Instance.commercialBreakCallBack = () => FinishCommercialBreak(onComplete);
+        PokiUnitySDK.Instance.commercialBreak();
+#endif
     }
 
     private void FinishCommercialBreak(Action onComplete)
@@ -86,7 +76,7 @@ public class PokiManager : MonoBehaviour
         SetGameMuted(false);
         SetInputEnabled(true);
 
-        Debug.Log("[Poki] commercialBreak finalizado (ou pulado fora do ambiente Poki)");
+        Debug.Log("[Poki] commercialBreak finalizado");
         onComplete?.Invoke();
     }
 
