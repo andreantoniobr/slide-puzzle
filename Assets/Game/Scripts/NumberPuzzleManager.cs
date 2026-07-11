@@ -31,6 +31,10 @@ public class NumberPuzzleManager : MonoBehaviour
     [SerializeField] private float shakeDuration  = 0.35f;
     [SerializeField] private float shakeFrequency = 28f;
 
+    [Header("Números de Fundo (guia visual)")]
+    [SerializeField] private bool showBackgroundNumbers = true;
+    [SerializeField] private NumberPuzzleBackgroundController backgroundController;
+
     [Header("UI (opcional)")]
     public Text   movesText;
     public Text   statusText;
@@ -98,6 +102,13 @@ public class NumberPuzzleManager : MonoBehaviour
         float cellH  = (panelH - gapSize * (gridSize + 1)) / gridSize;
 
         int fontSize = Mathf.Clamp(Mathf.RoundToInt(cellW * fontSizePercent), minFontSize, maxFontSize);
+
+        if (backgroundController != null)
+        {
+            backgroundController.SetVisible(showBackgroundNumbers);
+            if (showBackgroundNumbers)
+                backgroundController.Build(totalTiles, CellPosition, cellW, cellH, fontSize);
+        }
 
         for (int i = 0; i < totalTiles; i++)
         {
