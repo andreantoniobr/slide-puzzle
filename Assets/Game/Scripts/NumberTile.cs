@@ -48,6 +48,9 @@ public class NumberTile : MonoBehaviour,
     public Image    highlightOverlay;
     public TMP_Text numberText;
 
+    [Header("Glow de Posição Correta")]
+    [SerializeField] private TileCorrectGlowEffect correctGlowEffect;
+
     [HideInInspector] public int  correctIndex;
     [HideInInspector] public int  currentIndex;
     [HideInInspector] public bool isEmpty;
@@ -138,10 +141,11 @@ public class NumberTile : MonoBehaviour,
             if (background       != null) background.color       = new Color(0f, 0f, 0f, 0f);
             if (numberText       != null) numberText.text        = "";
             if (highlightOverlay != null) highlightOverlay.color = Color.clear;
+            correctGlowEffect?.SetCorrect(false);
             return;
         }
 
-        int number = correctIndex + 1; // 1-based para o jogador
+        int number = correctIndex + 1;
         if (numberText != null) numberText.text = number.ToString();
 
         bool inPlace = IsInCorrectPosition();
@@ -151,6 +155,8 @@ public class NumberTile : MonoBehaviour,
 
         if (numberText != null)
             numberText.color = inPlace ? TextTileCorrectColor : TextTileColor;
+
+        correctGlowEffect?.SetCorrect(inPlace); // NOVO
     }
 
     // ────────────────────────────────────────────────────────────────
