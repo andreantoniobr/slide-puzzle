@@ -201,9 +201,10 @@ public class NumberPuzzleManager : MonoBehaviour
     private void BeginTargetSelection(NumberTile tile, List<int> availableEmpties)
     {
         ClearHighlights();
-        CancelTargetSelection(); // por segurança, limpa qualquer seleção anterior pendente
+        CancelTargetSelection();
 
         pendingSelectionTile = tile;
+        tile.SetAwaitingSelection(true); // NOVO — ativa o glow rotativo na peça clicada
 
         foreach (int emptyPos in availableEmpties)
         {
@@ -227,6 +228,8 @@ public class NumberPuzzleManager : MonoBehaviour
     private void CancelTargetSelection()
     {
         if (pendingSelectionTile == null) return;
+
+        pendingSelectionTile.SetAwaitingSelection(false); // NOVO — desliga o glow ao cancelar/confirmar
 
         foreach (int emptyPos in emptyIndexes)
             GetTileAtIndex(emptyPos)?.SetSelectableTarget(false);
@@ -701,7 +704,7 @@ public class NumberPuzzleManager : MonoBehaviour
     private void ClearHighlights()
     {
         CancelTargetSelection();
-        
+
         if (tiles == null) return;
         foreach (NumberTile t in tiles)
         {

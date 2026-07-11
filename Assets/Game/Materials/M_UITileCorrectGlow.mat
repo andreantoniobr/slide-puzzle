@@ -48,9 +48,13 @@ Material:
     - _FlashDuration: 0
     - _GlowIntensity: 1
     - _IsCorrect: 0
+    - _IsSelected: 0
     - _OutlineIntensity: 1
     - _OutlineWidth: 0.04
     - _PulseSpeed: 2
+    - _SelectionBandWidth: 1
+    - _SelectionBorderWidth: 0.2
+    - _SelectionRotationSpeed: 0.7
     - _ShineDuration: 0.3
     - _ShineWidth: 0.2
     - _Stencil: 0
@@ -67,6 +71,7 @@ Material:
     - _GlowColor: {r: 0.69411767, g: 1, b: 0.7607843, a: 1}
     - _OutlineColor: {r: 1, g: 1, b: 1, a: 1}
     - _RendererColor: {r: 1, g: 1, b: 1, a: 1}
+    - _SelectionGlowColor: {r: 0.5013572, g: 0.9575471, b: 0.7008121, a: 0.5019608}
     - _ShineColor: {r: 0.7420722, g: 0.9764151, b: 0.58032215, a: 0.8}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

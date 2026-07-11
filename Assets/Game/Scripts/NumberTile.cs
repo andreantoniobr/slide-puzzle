@@ -56,7 +56,12 @@ public class NumberTile : MonoBehaviour,
     [HideInInspector] public bool isEmpty;
 
     [Header("Seleção de Destino (clique em vazio)")]
-    [SerializeField] private Color selectableEmptyColor = new Color(0.3f, 0.8f, 1f, 0.4f);
+    [SerializeField] private Color selectableEmptyColor = new Color(0.3f, 0.8f, 1f, 0.4f);   
+
+    public void SetAwaitingSelection(bool awaiting)
+    {
+        correctGlowEffect?.SetSelected(awaiting);
+    }
 
 
     // Paleta
