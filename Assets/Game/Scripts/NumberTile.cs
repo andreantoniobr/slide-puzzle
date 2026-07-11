@@ -36,7 +36,8 @@ public class NumberTile : MonoBehaviour,
     /// Delta mínimo de tela (px) para reconhecer um swipe.
     /// Abaixo deste valor o gesto é tratado como clique/tap.
     /// </summary>
-    private const float SWIPE_THRESHOLD = 15f;
+    [Header("Gestos")]
+    [SerializeField] private float swipeThreshold = 5f;
 
     // ────────────────────────────────────────────────────────────────
     //  Inspector
@@ -51,6 +52,10 @@ public class NumberTile : MonoBehaviour,
     [HideInInspector] public int  currentIndex;
     [HideInInspector] public bool isEmpty;
 
+    [Header("Seleção de Destino (clique em vazio)")]
+    [SerializeField] private Color selectableEmptyColor = new Color(0.3f, 0.8f, 1f, 0.4f);
+
+
     // Paleta
     [SerializeField] private Color TileColor        = new Color(1f,    1f,    1f,    1f);
     [SerializeField] private Color TileCorrectColor = new Color(0.64f, 1f,    0.35f, 1f);
@@ -60,6 +65,12 @@ public class NumberTile : MonoBehaviour,
     [SerializeField] private Color TextTileColor        = new Color(0.34f, 0.20f, 0.125f, 1f);
     [SerializeField] private Color TextTileCorrectColor = new Color(0.64f, 1f,    0.35f,  1f); 
     private static readonly Color HighlightColor = new Color(1f, 0.85f, 0.20f, 0.55f);
+
+
+    [Header("Feedback de Toque (Press/Pop)")]
+    [SerializeField] private float pressedScale = 0.9f;
+    [SerializeField] private float pressDuration = 0.08f;
+
 
     [Header("Feedback de Movimento Inválido")]
     [SerializeField] private float invalidMoveShrinkFactor = 0.85f;
@@ -83,6 +94,12 @@ public class NumberTile : MonoBehaviour,
 
     /// <summary>Posição de tela no momento do PointerDown.</summary>
     private Vector2 pointerDownScreenPos;
+
+    private Color originalBackgroundColor;
+    private bool isSelectableTarget;
+
+    private Coroutine scaleCoroutine;
+    private Vector3 baseScale = Vector3.one;
 
     // ────────────────────────────────────────────────────────────────
     //  Unity lifecycle
@@ -146,9 +163,16 @@ public class NumberTile : MonoBehaviour,
     /// </summary>
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (isAnimating || isEmpty) return;
+        if (isAnimating) return;
+        if (isEmpty && !isSelectableTarget) return;
+
+        manager.NotifyPlayerInput();
         pointerDownScreenPos = eventData.position;
+
+        
     }
+
+   
 
     // ────────────────────────────────────────────────────────────────
     //  EventSystem — Drag (supressão de scroll pai, sem mover a peça)
@@ -177,12 +201,21 @@ public class NumberTile : MonoBehaviour,
     /// </summary>
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (isAnimating || isEmpty) return;
+        if (isAnimating) return;
+        if (isEmpty && !isSelectableTarget) return;
+
+        
 
         Vector2 delta       = eventData.position - pointerDownScreenPos;
         float   deltaLength = delta.magnitude;
 
-        if (deltaLength < SWIPE_THRESHOLD)
+        if (isEmpty && isSelectableTarget)
+        {
+            manager.OnEmptyTileSelected(this);
+            return;
+        }
+
+        if (deltaLength < swipeThreshold)
         {
             bool moved = manager.OnTileClicked(this);
             if (!moved) PlayInvalidMoveFeedback();
@@ -197,22 +230,19 @@ public class NumberTile : MonoBehaviour,
 
     public void PlayInvalidMoveFeedback()
     {
-        if (isAnimating || isPlayingInvalidFeedback) return;
+        if (isAnimating) return;
         StartCoroutine(InvalidMoveBounce());
     }
 
     private IEnumerator InvalidMoveBounce()
     {
-        isPlayingInvalidFeedback = true;
+        Vector3 shrunkScale = baseScale * invalidMoveShrinkFactor;
+        float   half        = invalidMoveDuration * 0.5f;
 
-        Vector3 originalScale = transform.localScale;
-        Vector3 shrunkScale   = originalScale * invalidMoveShrinkFactor;
-        float   half          = invalidMoveDuration * 0.5f;
+        StartScaleAnimation(shrunkScale, half);
+        yield return new WaitForSeconds(half);
 
-        yield return ScaleOverTime(originalScale, shrunkScale, half);
-        yield return ScaleOverTime(shrunkScale, originalScale, half);
-
-        isPlayingInvalidFeedback = false;
+        StartScaleAnimation(baseScale, half);
     }
 
     private IEnumerator ScaleOverTime(Vector3 from, Vector3 to, float duration)
@@ -225,7 +255,18 @@ public class NumberTile : MonoBehaviour,
             yield return null;
         }
         transform.localScale = to;
+        scaleCoroutine = null;
     }
+
+    private void StartScaleAnimation(Vector3 targetScale, float duration)
+    {
+        if (scaleCoroutine != null)
+            StopCoroutine(scaleCoroutine);
+
+        scaleCoroutine = StartCoroutine(ScaleOverTime(transform.localScale, targetScale, duration));
+    }
+
+
 
     // ────────────────────────────────────────────────────────────────
     //  Suporte ao gesto (privados)
@@ -296,5 +337,22 @@ public class NumberTile : MonoBehaviour,
     {
         if (!isEmpty && IsInCorrectPosition())
             TileCorrectPositionEvent?.Invoke();
+    }
+
+    public void SetSelectableTarget(bool selectable)
+    {
+        isSelectableTarget = selectable;
+
+        if (background == null) return;
+
+        if (selectable)
+        {
+            originalBackgroundColor = background.color;
+            background.color = selectableEmptyColor;
+        }
+        else if (isEmpty)
+        {
+            background.color = originalBackgroundColor;
+        }
     }
 }

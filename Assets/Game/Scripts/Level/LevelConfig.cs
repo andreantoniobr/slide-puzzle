@@ -11,6 +11,8 @@ public class LevelConfig
     public int shuffleMoves;
     public int seed;
 
+    public int emptyTileCount = 1;
+
     /// <summary>
     /// Se preenchido (tamanho == gridSize*gridSize), define exatamente onde
     /// cada peça começa. Se null, o nível é embaralhado usando o seed.

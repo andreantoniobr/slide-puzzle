@@ -13,6 +13,10 @@ public class NumberPuzzleManager : MonoBehaviour
     [Range(2, 8)]
     public int gridSize = 4;
 
+    [Header("Espaços Vazios")]
+    [Range(1, 4)]
+    public int emptyTileCount = 1;
+
     [Header("Aparência")]
     public float gapSize      = 6f;
     public float moveDuration = 0.10f;
@@ -45,23 +49,28 @@ public class NumberPuzzleManager : MonoBehaviour
     public static event Action PuzzleStartedEvent;
     public static event Action<int, int>   SolvedPuzzleEvent;  // (movimentos, segundos)
 
-    public static event Action             SlidedTileEvent;   
-    
+    public static event Action             SlidedTileEvent;
+
     public static event Action             HighlightShownEvent;
 
     // ── Estado privado ───────────────────────────────────────────────
     private NumberTile[] tiles;
     private int[]        board;
-    private int          emptyIndex;
+    private List<int>    emptyIndexes = new List<int>();
     private int          totalTiles;
     private int          moveCount;
     private bool         puzzleSolved;
     private bool         isAnimating;
 
-    // NOVO: controla o tempo de jogo
+    private NumberTile pendingSelectionTile;
+
+    // controla o tempo de jogo
     private float puzzleStartTime;
 
-    // NOVO: guarda a posição inicial de cada tile para permitir restart exato
+    // controla se o jogador já interagiu nesta fase (usado pro gameplayStart da Poki)
+    private bool hasFiredFirstInput;
+
+    // guarda a posição inicial de cada tile para permitir restart exato
     private int[] initialTileIndexes;
 
     private Dictionary<NumberTile, Coroutine> activeShakes =
@@ -95,6 +104,7 @@ public class NumberPuzzleManager : MonoBehaviour
         totalTiles = gridSize * gridSize;
         board      = new int[totalTiles];
         tiles      = new NumberTile[totalTiles];
+        emptyIndexes.Clear();
 
         float panelW = boardPanel.rect.width;
         float panelH = boardPanel.rect.height;
@@ -102,22 +112,22 @@ public class NumberPuzzleManager : MonoBehaviour
         float cellH  = (panelH - gapSize * (gridSize + 1)) / gridSize;
 
         int fontSize = Mathf.Clamp(Mathf.RoundToInt(cellW * fontSizePercent), minFontSize, maxFontSize);
+        int firstEmptyId = totalTiles - emptyTileCount;
 
         if (backgroundController != null)
         {
             backgroundController.SetVisible(showBackgroundNumbers);
             if (showBackgroundNumbers)
-                backgroundController.Build(totalTiles, CellPosition, cellW, cellH, fontSize);
+                backgroundController.Build(firstEmptyId, CellPosition, cellW, cellH, fontSize);
         }
 
         for (int i = 0; i < totalTiles; i++)
         {
             board[i] = i;
-
-            bool isEmpty = (i == totalTiles - 1);
+            bool isEmpty = (i >= firstEmptyId);
 
             GameObject go = Instantiate(tilePrefab, boardPanel);
-            go.name = isEmpty ? "Tile_Empty" : $"Tile_{i + 1}";
+            go.name = isEmpty ? $"Tile_Empty_{i}" : $"Tile_{i + 1}";
 
             RectTransform rt = go.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
@@ -132,7 +142,7 @@ public class NumberPuzzleManager : MonoBehaviour
             tile.Init(this, i, i, isEmpty);
             tiles[i] = tile;
 
-            if (isEmpty) emptyIndex = i;
+            if (isEmpty) emptyIndexes.Add(i);
         }
 
         UpdateMovesUI();
@@ -152,55 +162,99 @@ public class NumberPuzzleManager : MonoBehaviour
 
     public bool OnTileClicked(NumberTile tile)
     {
-        if (isAnimating || puzzleSolved) return true; // ignora, mas não é "inválido"
+        if (isAnimating || puzzleSolved) return true;
+
+        if (pendingSelectionTile != null && pendingSelectionTile != tile)
+            CancelTargetSelection(); // clicou em outra peça — cancela a seleção anterior
 
         int tileIdx = tile.currentIndex;
+        List<int> adjacentEmpties = FindAllAdjacentEmpty(tileIdx);
 
-        if (IsAdjacent(tileIdx, emptyIndex))
+        if (adjacentEmpties.Count == 1)
         {
             ClearHighlights();
-            StartCoroutine(DoMove(tile, tileIdx));
+            StartCoroutine(DoMove(tile, tileIdx, adjacentEmpties[0]));
             return true;
         }
 
-        List<NumberTile> chain = BuildMoveChain(tileIdx);
-        if (chain != null && chain.Count > 0)
+        if (adjacentEmpties.Count > 1)
         {
-            ClearHighlights();
-            StartCoroutine(DoChainMove(chain));
-            return true;
+            BeginTargetSelection(tile, adjacentEmpties);
+            return true; // não é "inválido" — está aguardando escolha
+        }
+
+        if (emptyIndexes.Count == 1)
+        {
+            List<NumberTile> chain = BuildMoveChain(tileIdx);
+            if (chain != null && chain.Count > 0)
+            {
+                ClearHighlights();
+                StartCoroutine(DoChainMove(chain));
+                return true;
+            }
         }
 
         ShowMovableHighlights();
-        return false; // NOVO: avisa que este clique não moveu nada
+        return false;
+    }
+
+    private void BeginTargetSelection(NumberTile tile, List<int> availableEmpties)
+    {
+        ClearHighlights();
+        CancelTargetSelection(); // por segurança, limpa qualquer seleção anterior pendente
+
+        pendingSelectionTile = tile;
+
+        foreach (int emptyPos in availableEmpties)
+        {
+            NumberTile emptyTile = GetTileAtIndex(emptyPos);
+            emptyTile?.SetSelectableTarget(true);
+        }
+    }
+
+    public void OnEmptyTileSelected(NumberTile emptyTile)
+    {
+        if (pendingSelectionTile == null) return;
+
+        NumberTile selectedTile = pendingSelectionTile;
+        int fromIndex = selectedTile.currentIndex;
+        int targetEmptyIndex = emptyTile.currentIndex;
+
+        CancelTargetSelection();
+        StartCoroutine(DoMove(selectedTile, fromIndex, targetEmptyIndex));
+    }
+
+    private void CancelTargetSelection()
+    {
+        if (pendingSelectionTile == null) return;
+
+        foreach (int emptyPos in emptyIndexes)
+            GetTileAtIndex(emptyPos)?.SetSelectableTarget(false);
+
+        pendingSelectionTile = null;
+    }
+
+    private List<int> FindAllAdjacentEmpty(int tileIdx)
+    {
+        var result = new List<int>();
+        foreach (int emptyPos in emptyIndexes)
+            if (IsAdjacent(tileIdx, emptyPos)) result.Add(emptyPos);
+        return result;
+    }
+
+    /// <summary>
+    /// Chamado pelo NumberTile assim que o jogador toca em qualquer peça (PointerDown),
+    /// independente de o toque resultar em movimento. Marca o início real de gameplay.
+    /// </summary>
+    public void NotifyPlayerInput()
+    {
+        if (hasFiredFirstInput || puzzleSolved) return;
+        hasFiredFirstInput = true;
     }
 
     // ────────────────────────────────────────────────────────────────
     //  Input — Swipe
     // ────────────────────────────────────────────────────────────────
-
-    public DragDirection GetAllowedDirection(NumberTile tile)
-    {
-        int tileIdx  = tile.currentIndex;
-        int emptyIdx = emptyIndex;
-
-        int rTile  = tileIdx  / gridSize;
-        int cTile  = tileIdx  % gridSize;
-        int rEmpty = emptyIdx / gridSize;
-        int cEmpty = emptyIdx % gridSize;
-
-        int dr = rEmpty - rTile;
-        int dc = cEmpty - cTile;
-
-        if (Mathf.Abs(dr) + Mathf.Abs(dc) != 1) return DragDirection.None;
-
-        if (dr ==  1 && dc ==  0) return DragDirection.Down;
-        if (dr == -1 && dc ==  0) return DragDirection.Up;
-        if (dr ==  0 && dc ==  1) return DragDirection.Right;
-        if (dr ==  0 && dc == -1) return DragDirection.Left;
-
-        return DragDirection.None;
-    }
 
     public bool TryMove(NumberTile tile, DragDirection direction)
     {
@@ -208,31 +262,60 @@ public class NumberPuzzleManager : MonoBehaviour
 
         int tileIdx = tile.currentIndex;
 
-        DragDirection allowed = GetAllowedDirection(tile);
-        if (allowed != DragDirection.None && allowed == direction)
+        foreach (int emptyPos in emptyIndexes)
         {
-            ClearHighlights();
-            StartCoroutine(DoMove(tile, tileIdx));
-            return true;
+            DragDirection allowed = GetDirectionToEmpty(tileIdx, emptyPos);
+            if (allowed != DragDirection.None && allowed == direction)
+            {
+                ClearHighlights();
+                StartCoroutine(DoMove(tile, tileIdx, emptyPos));
+                return true;
+            }
         }
 
-        List<NumberTile> chain = BuildMoveChain(tileIdx);
-        if (chain == null || chain.Count == 0) return false;
+        if (emptyIndexes.Count == 1)
+        {
+            List<NumberTile> chain = BuildMoveChain(tileIdx);
+            if (chain != null && chain.Count > 0)
+            {
+                DragDirection chainDir = GetChainDirection(tileIdx);
+                if (chainDir != DragDirection.None && chainDir == direction)
+                {
+                    ClearHighlights();
+                    StartCoroutine(DoChainMove(chain));
+                    return true;
+                }
+            }
+        }
 
-        DragDirection chainDir = GetChainDirection(tileIdx);
-        if (chainDir == DragDirection.None || chainDir != direction) return false;
+        return false;
+    }
 
-        ClearHighlights();
-        StartCoroutine(DoChainMove(chain));
-        return true;
+    private DragDirection GetDirectionToEmpty(int tileIdx, int emptyIdx)
+    {
+        int rTile = tileIdx / gridSize, cTile = tileIdx % gridSize;
+        int rEmpty = emptyIdx / gridSize, cEmpty = emptyIdx % gridSize;
+
+        int dr = rEmpty - rTile;
+        int dc = cEmpty - cTile;
+        if (Mathf.Abs(dr) + Mathf.Abs(dc) != 1) return DragDirection.None;
+
+        if (dr == 1 && dc == 0) return DragDirection.Down;
+        if (dr == -1 && dc == 0) return DragDirection.Up;
+        if (dr == 0 && dc == 1) return DragDirection.Right;
+        if (dr == 0 && dc == -1) return DragDirection.Left;
+        return DragDirection.None;
     }
 
     private DragDirection GetChainDirection(int tileIndex)
     {
+        if (emptyIndexes.Count != 1) return DragDirection.None;
+        int emptyIdx = emptyIndexes[0];
+
         int rTile  = tileIndex  / gridSize;
         int cTile  = tileIndex  % gridSize;
-        int rEmpty = emptyIndex / gridSize;
-        int cEmpty = emptyIndex % gridSize;
+        int rEmpty = emptyIdx / gridSize;
+        int cEmpty = emptyIdx % gridSize;
 
         if (rTile == rEmpty && cEmpty > cTile) return DragDirection.Right;
         if (rTile == rEmpty && cEmpty < cTile) return DragDirection.Left;
@@ -243,15 +326,18 @@ public class NumberPuzzleManager : MonoBehaviour
     }
 
     // ────────────────────────────────────────────────────────────────
-    //  Movimento em cadeia
+    //  Movimento em cadeia (só existe quando há exatamente 1 espaço vazio)
     // ────────────────────────────────────────────────────────────────
 
     private List<NumberTile> BuildMoveChain(int targetIndex)
     {
+        if (emptyIndexes.Count != 1) return null;
+        int emptyIdx = emptyIndexes[0];
+
         int rTarget = targetIndex / gridSize;
         int cTarget = targetIndex % gridSize;
-        int rEmpty  = emptyIndex  / gridSize;
-        int cEmpty  = emptyIndex  % gridSize;
+        int rEmpty  = emptyIdx    / gridSize;
+        int cEmpty  = emptyIdx    % gridSize;
 
         if (rTarget == rEmpty && cTarget != cEmpty)
         {
@@ -295,22 +381,23 @@ public class NumberPuzzleManager : MonoBehaviour
 
         foreach (NumberTile tile in chain)
         {
-            int fromIndex = tile.currentIndex;
+            int fromIndex   = tile.currentIndex;
+            int emptyIdx    = emptyIndexes[0];
 
-            NumberTile    emptyTile = GetTileAtIndex(emptyIndex);
+            NumberTile    emptyTile = GetTileAtIndex(emptyIdx);
             RectTransform tileRT    = tile.GetComponent<RectTransform>();
-            RectTransform emptyRT   = emptyTile.GetComponent<RectTransform>();
 
             Vector2 startPos  = CellPosition(fromIndex, cellW, cellH);
-            Vector2 targetPos = CellPosition(emptyIndex, cellW, cellH);
+            Vector2 targetPos = CellPosition(emptyIdx, cellW, cellH);
 
             moves.Add((tileRT, startPos, targetPos));
 
-            board[emptyIndex]      = board[fromIndex];
-            board[fromIndex]       = totalTiles - 1;
-            tile.currentIndex      = emptyIndex;
-            emptyTile.currentIndex = fromIndex;
-            emptyIndex             = fromIndex;
+            board[emptyIdx]         = board[fromIndex];
+            board[fromIndex]        = emptyTile.correctIndex;
+            tile.currentIndex       = emptyIdx;
+            emptyTile.currentIndex  = fromIndex;
+
+            emptyIndexes[0] = fromIndex; // move o vazio pra posição que a peça deixou
 
             moveCount++;
             SlidedTileEvent?.Invoke();
@@ -318,7 +405,8 @@ public class NumberPuzzleManager : MonoBehaviour
 
         UpdateMovesUI();
 
-        NumberTile    emptyTileFinal = GetTileAtIndex(emptyIndex);
+        int finalEmptyIdx = emptyIndexes[0];
+        NumberTile    emptyTileFinal = GetTileAtIndex(finalEmptyIdx);
         RectTransform emptyRTFinal   = emptyTileFinal.GetComponent<RectTransform>();
         emptyRTFinal.gameObject.SetActive(false);
 
@@ -335,7 +423,7 @@ public class NumberPuzzleManager : MonoBehaviour
         foreach (var (rt, _, to) in moves)
             rt.anchoredPosition = to;
 
-        emptyRTFinal.anchoredPosition = CellPosition(emptyIndex, cellW, cellH);
+        emptyRTFinal.anchoredPosition = CellPosition(finalEmptyIdx, cellW, cellH);
         emptyRTFinal.gameObject.SetActive(true);
 
         foreach (NumberTile tile in chain)
@@ -354,13 +442,12 @@ public class NumberPuzzleManager : MonoBehaviour
     //  Movimento animado (único)
     // ────────────────────────────────────────────────────────────────
 
-    private IEnumerator DoMove(NumberTile tile, int fromIndex, Action onComplete = null)
+    private IEnumerator DoMove(NumberTile tile, int fromIndex, int targetEmptyIndex, Action onComplete = null)
     {
         isAnimating = true;
-
         SlidedTileEvent?.Invoke();
 
-        NumberTile    emptyTile = GetTileAtIndex(emptyIndex);
+        NumberTile    emptyTile = GetTileAtIndex(targetEmptyIndex);
         RectTransform tileRT    = tile.GetComponent<RectTransform>();
         RectTransform emptyRT   = emptyTile.GetComponent<RectTransform>();
 
@@ -369,11 +456,13 @@ public class NumberPuzzleManager : MonoBehaviour
 
         emptyRT.gameObject.SetActive(false);
 
-        board[emptyIndex]      = board[fromIndex];
-        board[fromIndex]       = totalTiles - 1;
-        tile.currentIndex      = emptyIndex;
-        emptyTile.currentIndex = fromIndex;
-        emptyIndex             = fromIndex;
+        board[targetEmptyIndex] = board[fromIndex];
+        board[fromIndex]        = emptyTile.correctIndex;
+        tile.currentIndex       = targetEmptyIndex;
+        emptyTile.currentIndex  = fromIndex;
+
+        emptyIndexes.Remove(targetEmptyIndex);
+        emptyIndexes.Add(fromIndex);
 
         moveCount++;
         UpdateMovesUI();
@@ -393,11 +482,9 @@ public class NumberPuzzleManager : MonoBehaviour
 
         tile.Refresh();
         emptyTile.Refresh();
-
         isAnimating = false;
 
         tile.CheckIfJustReachedCorrectPosition();
-
         if (CheckWin()) OnPuzzleSolved();
 
         onComplete?.Invoke();
@@ -413,20 +500,22 @@ public class NumberPuzzleManager : MonoBehaviour
 
         moveCount    = 0;
         puzzleSolved = false;
+        hasFiredFirstInput = false;
         ClearHighlights();
         if (statusText != null) statusText.text = "";
 
         SolveInstant();
 
-        int lastEmpty = -1;
         for (int i = 0; i < shuffleMoves; i++)
         {
-            List<int> neighbors = GetValidNeighbors(emptyIndex);
-            neighbors.RemoveAll(n => n == lastEmpty);
+            int emptyPos = emptyIndexes[UnityEngine.Random.Range(0, emptyIndexes.Count)];
+            List<int> neighbors = GetValidNeighbors(emptyPos);
+            neighbors.RemoveAll(n => emptyIndexes.Contains(n)); // não troca vazio com vazio
+
+            if (neighbors.Count == 0) continue;
 
             int pick = neighbors[UnityEngine.Random.Range(0, neighbors.Count)];
-            lastEmpty = emptyIndex;
-            SwapLogical(pick, emptyIndex);
+            SwapLogical(pick, emptyPos);
         }
 
         RefreshVisualPositions();
@@ -434,12 +523,11 @@ public class NumberPuzzleManager : MonoBehaviour
         UpdateMovesUI();
 
         SaveInitialState();
-
         puzzleStartTime = Time.time;
         PuzzleStartedEvent?.Invoke();
     }
 
-    // NOVO: embaralha de forma determinística (mesmo seed = mesmo resultado)
+    // embaralha de forma determinística (mesmo seed = mesmo resultado)
     public void ShuffleDeterministic(int seed)
     {
         UnityEngine.Random.State previousState = UnityEngine.Random.state;
@@ -448,13 +536,16 @@ public class NumberPuzzleManager : MonoBehaviour
         UnityEngine.Random.state = previousState; // não polui o RNG global
     }
 
-    // NOVO: carrega um nível a partir de um LevelConfig (feito à mão ou procedural)
+    // carrega um nível a partir de um LevelConfig (feito à mão ou procedural)
     public void LoadLevel(LevelConfig config)
     {
         gridSize = Mathf.Clamp(config.gridSize, 2, 8);
         if (config.shuffleMoves > 0) shuffleMoves = config.shuffleMoves;
 
-        BuildBoard(); // recria os tiles no tamanho certo do nível
+        int maxEmpty = Mathf.Max(1, (gridSize * gridSize) / 2);
+        emptyTileCount = Mathf.Clamp(config.emptyTileCount > 0 ? config.emptyTileCount : 1, 1, maxEmpty);
+
+        BuildBoard();
 
         if (config.customBoard != null && config.customBoard.Length == gridSize * gridSize)
             ApplyCustomArrangement(config.customBoard);
@@ -466,16 +557,17 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         moveCount    = 0;
         puzzleSolved = false;
+        hasFiredFirstInput = false;
         ClearHighlights();
         if (statusText != null) statusText.text = "";
 
+        emptyIndexes.Clear();
         for (int i = 0; i < totalTiles; i++)
         {
             int idx = arrangement[i];
             tiles[i].currentIndex = idx;
             board[idx] = i;
-
-            if (tiles[i].isEmpty) emptyIndex = idx;
+            if (tiles[i].isEmpty) emptyIndexes.Add(idx);
         }
 
         RefreshVisualPositions();
@@ -483,32 +575,32 @@ public class NumberPuzzleManager : MonoBehaviour
         UpdateMovesUI();
 
         SaveInitialState();
-
         puzzleStartTime = Time.time;
         PuzzleStartedEvent?.Invoke();
     }
 
-    // NOVO: reinicia o nível atual EXATAMENTE como estava no começo (sem re-embaralhar)
+    // reinicia o nível atual EXATAMENTE como estava no começo (sem re-embaralhar)
     public void RestartLevel()
     {
         if (initialTileIndexes == null || initialTileIndexes.Length != totalTiles)
         {
-            Shuffle(); // fallback de segurança, não deveria acontecer em uso normal
+            Shuffle();
             return;
         }
 
         moveCount    = 0;
         puzzleSolved = false;
+        hasFiredFirstInput = false;
         ClearHighlights();
         if (statusText != null) statusText.text = "";
 
+        emptyIndexes.Clear();
         for (int i = 0; i < totalTiles; i++)
         {
             int idx = initialTileIndexes[i];
             tiles[i].currentIndex = idx;
             board[idx] = i;
-
-            if (tiles[i].isEmpty) emptyIndex = idx;
+            if (tiles[i].isEmpty) emptyIndexes.Add(idx);
         }
 
         RefreshVisualPositions();
@@ -538,8 +630,8 @@ public class NumberPuzzleManager : MonoBehaviour
         tA.currentIndex = b;
         tB.currentIndex = a;
 
-        if (tA.isEmpty) emptyIndex = b;
-        if (tB.isEmpty) emptyIndex = a;
+        if (tA.isEmpty) { emptyIndexes.Remove(a); emptyIndexes.Add(b); }
+        if (tB.isEmpty) { emptyIndexes.Remove(b); emptyIndexes.Add(a); }
     }
 
     private void RefreshVisualPositions()
@@ -573,7 +665,12 @@ public class NumberPuzzleManager : MonoBehaviour
             board[i]              = i;
             tiles[i].currentIndex = i;
         }
-        emptyIndex = totalTiles - 1;
+
+        emptyIndexes.Clear();
+        int firstEmptyId = totalTiles - emptyTileCount;
+        for (int id = firstEmptyId; id < totalTiles; id++)
+            emptyIndexes.Add(id);
+
         RefreshVisualPositions();
         RefreshAllColors();
     }
@@ -587,7 +684,12 @@ public class NumberPuzzleManager : MonoBehaviour
         ClearHighlights();
         HighlightShownEvent?.Invoke();
 
-        foreach (int n in GetValidNeighbors(emptyIndex))
+        var toHighlight = new HashSet<int>();
+        foreach (int emptyPos in emptyIndexes)
+            foreach (int n in GetValidNeighbors(emptyPos))
+                toHighlight.Add(n);
+
+        foreach (int n in toHighlight)
         {
             NumberTile t = GetTileAtIndex(n);
             if (t == null || t.isEmpty) continue;
@@ -598,6 +700,8 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private void ClearHighlights()
     {
+        CancelTargetSelection();
+        
         if (tiles == null) return;
         foreach (NumberTile t in tiles)
         {
@@ -649,8 +753,22 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private bool CheckWin()
     {
+        int firstEmptyId = totalTiles - emptyTileCount;
+
         for (int i = 0; i < totalTiles; i++)
-            if (board[i] != i) return false;
+        {
+            if (i < firstEmptyId)
+            {
+                // célula numerada: precisa ser exatamente a peça correta
+                if (board[i] != i) return false;
+            }
+            else
+            {
+                // célula de espaço vazio: qualquer peça vazia serve aqui, não precisa ser a MESMA identidade
+                if (board[i] < firstEmptyId) return false;
+            }
+        }
+
         return true;
     }
 
@@ -658,7 +776,6 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         puzzleSolved = true;
 
-        // NOVO: calcula o tempo decorrido e dispara o evento com os dois valores
         int elapsedSeconds = Mathf.RoundToInt(Time.time - puzzleStartTime);
         SolvedPuzzleEvent?.Invoke(moveCount, elapsedSeconds);
 

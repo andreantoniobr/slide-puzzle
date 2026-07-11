@@ -941,6 +941,7 @@ MonoBehaviour:
   tilePrefab: {fileID: 4092838294686666308, guid: e55b6dc7fb962b34892a916f7a2d1a52, type: 3}
   boardPanel: {fileID: 340401676}
   gridSize: 3
+  emptyTileCount: 2
   gapSize: 2
   moveDuration: 0.12
   fontSizePercent: 0.65

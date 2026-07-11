@@ -12,6 +12,10 @@ public class LevelData : ScriptableObject
     [Header("Tamanho")]
     [Range(2, 8)] public int gridSize = 4;
 
+    [Header("Espaços Vazios")]
+    [Range(1, 4)]
+    public int emptyTileCount = 1;
+
     [Header("Modo")]
     public LevelMode mode = LevelMode.Embaralhado;
 
@@ -27,10 +31,11 @@ public class LevelData : ScriptableObject
     {
         var config = new LevelConfig
         {
-            gridSize     = gridSize,
+            gridSize = gridSize,
             shuffleMoves = shuffleMoves,
-            seed         = seed,
-            customBoard  = null
+            seed = seed,
+            customBoard = null,
+            emptyTileCount = emptyTileCount
         };
 
         if (mode == LevelMode.ArranjoPersonalizado &&

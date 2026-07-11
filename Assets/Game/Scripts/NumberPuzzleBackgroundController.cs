@@ -14,15 +14,14 @@ public class NumberPuzzleBackgroundController : MonoBehaviour
 
     private NumberBackgroundTile[] backgroundTiles;
 
-    public void Build(int totalTiles, System.Func<int, float, float, Vector2> cellPositionFunc, float cellW, float cellH, int fontSize)
+    public void Build(int numberedTileCount, System.Func<int, float, float, Vector2> cellPositionFunc, float cellW, float cellH, int fontSize)
     {
         Clear();
-
         if (backgroundTilePrefab == null || backgroundPanel == null) return;
 
-        backgroundTiles = new NumberBackgroundTile[totalTiles - 1];
+        backgroundTiles = new NumberBackgroundTile[numberedTileCount];
 
-        for (int i = 0; i < totalTiles - 1; i++) // -1: última posição é onde o vazio termina
+        for (int i = 0; i < numberedTileCount; i++) 
         {
             GameObject go = Instantiate(backgroundTilePrefab, backgroundPanel);
             go.name = $"BgTile_{i + 1}";
