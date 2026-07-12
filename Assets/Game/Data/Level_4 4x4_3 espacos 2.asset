@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_3 espacos 1
+  m_Name: Level_4 4x4_3 espacos 2
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: "N\xEDvel"
-  gridSize: 3
-  emptyTileCount: 2
+  gridSize: 4
+  emptyTileCount: 3
   mode: 1
   shuffleMoves: 120
   seed: 12345
-  customArrangement: 060000000200000001000000030000000700000005000000040000000000000008000000
+  customArrangement: 0a00000007000000030000000500000008000000040000000e00000000000000010000000d0000000f000000060000000c000000020000000b00000009000000

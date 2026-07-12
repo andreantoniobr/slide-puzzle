@@ -440,7 +440,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b9db4acec146cf4a93ae81664325c1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NumberTile
-  swipeThreshold: 15
+  swipeThreshold: 8
   background: {fileID: 7478704338609438618}
   highlightOverlay: {fileID: 8090017851479211408}
   numberText: {fileID: 5432264214082607299}
