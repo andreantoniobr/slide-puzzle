@@ -75,11 +75,6 @@ public class NumberTile : MonoBehaviour,
     private static readonly Color HighlightColor = new Color(1f, 0.85f, 0.20f, 0.55f);
 
 
-    [Header("Feedback de Toque (Press/Pop)")]
-    [SerializeField] private float pressedScale = 0.9f;
-    [SerializeField] private float pressDuration = 0.08f;
-
-
     [Header("Feedback de Movimento Inválido")]
     [SerializeField] private float invalidMoveShrinkFactor = 0.85f;
     [SerializeField] private float invalidMoveDuration = 0.15f;

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class LevelManager : MonoBehaviour
@@ -10,6 +11,8 @@ public class LevelManager : MonoBehaviour
     private int currentLevelIndex;
 
     public int CurrentLevelNumber => currentLevelIndex + 1;
+
+    public static event Action<int> LevelLoadedEvent;
 
     private void Awake()
     {
@@ -25,6 +28,8 @@ public class LevelManager : MonoBehaviour
     {
         LevelConfig config = GetConfigForLevel(currentLevelIndex);
         puzzleManager.LoadLevel(config);
+
+        LevelLoadedEvent?.Invoke(CurrentLevelNumber);
     }
 
     public void RestartLevel()
