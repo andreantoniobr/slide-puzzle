@@ -839,4 +839,48 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         if (movesText != null) movesText.text = $"Movimentos: {moveCount}";
     }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Suporte ao Tutorial
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Retorna o RectTransform de uma peça adjacente a um vazio (movível agora)
+    /// e o RectTransform do vazio correspondente — usado pelo tutorial de swipe básico.
+    /// </summary>
+    public (RectTransform tile, RectTransform target) GetFirstMovableTileAndTarget()
+    {
+        foreach (int emptyPos in emptyIndexes)
+        {
+            foreach (int n in GetValidNeighbors(emptyPos))
+            {
+                NumberTile t = GetTileAtIndex(n);
+                if (t != null && !t.isEmpty)
+                {
+                    NumberTile emptyTile = GetTileAtIndex(emptyPos);
+                    return (t.GetComponent<RectTransform>(), emptyTile.GetComponent<RectTransform>());
+                }
+            }
+        }
+        return (null, null);
+    }
+
+    /// <summary>
+    /// Acha uma peça com 2+ vazios adjacentes — usada pelo tutorial de escolha de destino.
+    /// </summary>
+    public (RectTransform tile, RectTransform target) GetFirstAmbiguousTileAndTarget()
+    {
+        foreach (NumberTile tile in tiles)
+        {
+            if (tile.isEmpty) continue;
+
+            List<int> adjacentEmpties = FindAllAdjacentEmpty(tile.currentIndex);
+            if (adjacentEmpties.Count >= 2)
+            {
+                NumberTile emptyTile = GetTileAtIndex(adjacentEmpties[0]);
+                return (tile.GetComponent<RectTransform>(), emptyTile.GetComponent<RectTransform>());
+            }
+        }
+        return (null, null);
+    }   
 }

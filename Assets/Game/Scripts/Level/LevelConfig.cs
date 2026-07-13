@@ -19,4 +19,6 @@ public class LevelConfig
     /// customBoard[i] = posição inicial da peça de número (i+1).
     /// </summary>
     public int[] customBoard;
+
+    public TutorialStageData tutorialStage;
 }

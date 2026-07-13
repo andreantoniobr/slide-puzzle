@@ -27,6 +27,10 @@ public class LevelData : ScriptableObject
     [Tooltip("Tamanho deve ser gridSize*gridSize. customArrangement[i] = posição inicial da peça número (i+1). Deixe vazio para usar Embaralhado.")]
     public List<int> customArrangement = new List<int>();
 
+    [Header("Tutorial (opcional)")]
+    [Tooltip("Se definido, este tutorial é exibido quando o nível carrega (e ainda não foi visto).")]
+    public TutorialStageData tutorialStage;
+
     public LevelConfig ToConfig()
     {
         var config = new LevelConfig
@@ -35,7 +39,8 @@ public class LevelData : ScriptableObject
             shuffleMoves = shuffleMoves,
             seed = seed,
             customBoard = null,
-            emptyTileCount = emptyTileCount
+            emptyTileCount = emptyTileCount,
+            tutorialStage  = tutorialStage
         };
 
         if (mode == LevelMode.ArranjoPersonalizado &&

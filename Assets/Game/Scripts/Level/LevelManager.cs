@@ -1,18 +1,19 @@
-using System;
 using UnityEngine;
 
 public class LevelManager : MonoBehaviour
 {
     [SerializeField] private LevelDatabase levelDatabase;
     [SerializeField] private NumberPuzzleManager puzzleManager;
+    [SerializeField] private TutorialOverlayController tutorialOverlay; // NOVO
 
     private const string CurrentLevelKey = "CurrentLevelIndex";
 
     private int currentLevelIndex;
+    private bool isFirstLoad = true; // NOVO (se ainda não tiver)
+
+    public static event System.Action<int> LevelLoadedEvent; // caso ainda não tenha adicionado antes
 
     public int CurrentLevelNumber => currentLevelIndex + 1;
-
-    public static event Action<int> LevelLoadedEvent;
 
     private void Awake()
     {
@@ -30,6 +31,13 @@ public class LevelManager : MonoBehaviour
         puzzleManager.LoadLevel(config);
 
         LevelLoadedEvent?.Invoke(CurrentLevelNumber);
+
+        if (isFirstLoad)
+        {
+            isFirstLoad = false;
+        }
+
+        TryShowTutorialForThisLevel(config); // NOVO
     }
 
     public void RestartLevel()
@@ -47,7 +55,7 @@ public class LevelManager : MonoBehaviour
 
     public void GoToLevel(int levelNumber)
     {
-        int index = Mathf.Max(0, levelNumber - 1); // levelNumber é 1-based pra quem usa (nível 1, 2, 3...)
+        int index = Mathf.Max(0, levelNumber - 1);
         currentLevelIndex = index;
         PlayerPrefs.SetInt(CurrentLevelKey, currentLevelIndex);
         PlayerPrefs.Save();
@@ -58,6 +66,9 @@ public class LevelManager : MonoBehaviour
     {
         currentLevelIndex = 0;
         PlayerPrefs.SetInt(CurrentLevelKey, 0);
+
+        TutorialOverlayController.ResetAllTutorials(); // NOVO
+
         PlayerPrefs.Save();
         LoadCurrentLevel();
     }
@@ -72,4 +83,38 @@ public class LevelManager : MonoBehaviour
         int proceduralIndex = index - handMadeCount;
         return ProceduralLevelGenerator.Generate(proceduralIndex);
     }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Tutorial (NOVO)
+    // ────────────────────────────────────────────────────────────────
+
+private void TryShowTutorialForThisLevel(LevelConfig config)
+{
+    if (tutorialOverlay == null) return;
+    if (config.tutorialStage == null) return;
+    if (TutorialOverlayController.HasSeenStage(config.tutorialStage.stageId)) return;
+
+    RectTransform sourceTile = null;
+    RectTransform targetCell = null;
+
+    if (config.tutorialStage.gestureType == TutorialGestureType.BasicSwipe)
+    {
+        (sourceTile, targetCell) = puzzleManager.GetFirstMovableTileAndTarget();
+    }
+    else if (config.tutorialStage.gestureType == TutorialGestureType.MultiEmptySelection)
+    {
+        (sourceTile, targetCell) = puzzleManager.GetFirstAmbiguousTileAndTarget();
+    }
+
+    if (sourceTile == null || targetCell == null) return;
+
+    tutorialOverlay.Show(config.tutorialStage, sourceTile, targetCell);
+
+    void OnFirstSlide()
+    {
+        tutorialOverlay.CompleteCurrentStage();
+        NumberPuzzleManager.SlidedTileEvent -= OnFirstSlide;
+    }
+    NumberPuzzleManager.SlidedTileEvent += OnFirstSlide;
+}
 }

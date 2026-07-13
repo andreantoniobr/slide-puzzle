@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: "N\xEDvel"
   gridSize: 2
+  emptyTileCount: 1
   mode: 1
   shuffleMoves: 120
   seed: 12345
   customArrangement: 01000000030000000200000000000000
+  tutorialStage: {fileID: 11400000, guid: d08e8047ce5aceb4c9f220964ebd522e, type: 2}
