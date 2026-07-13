@@ -85,6 +85,9 @@ public class TutorialOverlayController : MonoBehaviour
         if (instructionText != null)
             instructionText.text = stageData.message;
 
+        // NOVO: posiciona e rotaciona a seta ANTES de qualquer fade — já nasce correta
+        PositionArrow(sourcePoint.position, targetPoint.position);
+
         gameObject.SetActive(true);
         overlayCanvasGroup.gameObject.SetActive(true);
 
@@ -131,9 +134,6 @@ public class TutorialOverlayController : MonoBehaviour
 
     private IEnumerator GestureLoop()
     {
-        // Seta: posicionada e rotacionada UMA VEZ, aponta pro destino e fica parada
-        PositionArrow(sourcePoint.position, targetPoint.position);
-
         while (true)
         {
             SetHandPosition(sourcePoint.position);

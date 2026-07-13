@@ -850,19 +850,40 @@ public class NumberPuzzleManager : MonoBehaviour
     /// </summary>
     public (RectTransform tile, RectTransform target) GetFirstMovableTileAndTarget()
     {
+        NumberTile bestTile = null;
+        int bestEmptyPos = -1;
+        int bestScore = int.MaxValue;
+
         foreach (int emptyPos in emptyIndexes)
         {
             foreach (int n in GetValidNeighbors(emptyPos))
             {
                 NumberTile t = GetTileAtIndex(n);
-                if (t != null && !t.isEmpty)
+                if (t == null || t.isEmpty) continue;
+
+                // Quão longe a peça ficaria do destino CORRETO dela após esse movimento
+                int distanceAfterMove = ManhattanDistance(emptyPos, t.correctIndex);
+
+                if (distanceAfterMove < bestScore)
                 {
-                    NumberTile emptyTile = GetTileAtIndex(emptyPos);
-                    return (t.GetComponent<RectTransform>(), emptyTile.GetComponent<RectTransform>());
+                    bestScore = distanceAfterMove;
+                    bestTile = t;
+                    bestEmptyPos = emptyPos;
                 }
             }
         }
-        return (null, null);
+
+        if (bestTile == null) return (null, null);
+
+        NumberTile emptyTile = GetTileAtIndex(bestEmptyPos);
+        return (bestTile.GetComponent<RectTransform>(), emptyTile.GetComponent<RectTransform>());
+    }
+
+    private int ManhattanDistance(int a, int b)
+    {
+        int rA = a / gridSize, cA = a % gridSize;
+        int rB = b / gridSize, cB = b % gridSize;
+        return Mathf.Abs(rA - rB) + Mathf.Abs(cA - cB);
     }
 
     /// <summary>
