@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
+  m_Name: Level_3 espacos 11 Movimentos
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelName: "N\xEDvel"
+  gridSize: 3
+  emptyTileCount: 3
+  mode: 1
+  shuffleMoves: 120
+  seed: 12345
+  customArrangement: 030000000000000004000000070000000800000002000000050000000100000006000000

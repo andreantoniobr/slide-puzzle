@@ -11,10 +11,14 @@ public class LevelConfig
     public int shuffleMoves;
     public int seed;
 
+    public int emptyTileCount = 1;
+
     /// <summary>
     /// Se preenchido (tamanho == gridSize*gridSize), define exatamente onde
     /// cada peça começa. Se null, o nível é embaralhado usando o seed.
     /// customBoard[i] = posição inicial da peça de número (i+1).
     /// </summary>
     public int[] customBoard;
+
+    public TutorialStageData tutorialStage;
 }

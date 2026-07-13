@@ -122,6 +122,7 @@ public class LevelDebugPanel : MonoBehaviour
         CreateButton(panelRoot.transform, "Próximo Nível", OnNextLevelButton);
         CreateButton(panelRoot.transform, "Nível Anterior", OnPreviousLevelButton);
         CreateButton(panelRoot.transform, "Resetar Progresso", OnResetProgressButton);
+        CreateButton(panelRoot.transform, "Resetar Tutoriais", OnResetTutorialsButton);
     }
 
     private Text CreateText(Transform parent, string content, int fontSize, FontStyle style)
@@ -245,6 +246,12 @@ public class LevelDebugPanel : MonoBehaviour
     private void OnResetProgressButton()
     {
         levelManager.ResetProgress();
+    }
+    
+    private void OnResetTutorialsButton()
+    {
+        TutorialOverlayController.ResetAllTutorials();
+        Debug.Log("[LevelDebugPanel] Tutoriais resetados — devem aparecer novamente ao carregar os níveis correspondentes.");
     }
 }
 
