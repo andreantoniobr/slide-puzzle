@@ -4,6 +4,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Image))]
 public class TileCorrectGlowEffect : MonoBehaviour
 {
+    [SerializeField]
+    private ParticleSystem correctParticles;
+
     private static readonly int IsCorrectProperty = Shader.PropertyToID("_IsCorrect");
     private static readonly int TimestampProperty = Shader.PropertyToID("_CorrectTimestamp");
     private static readonly int IsSelectedProperty = Shader.PropertyToID("_IsSelected"); // NOVO
@@ -31,7 +34,15 @@ public class TileCorrectGlowEffect : MonoBehaviour
         }
 
         if (isCorrect && !wasCorrect)
+        {
             materialInstance.SetFloat(TimestampProperty, Time.time);
+
+            if (correctParticles != null)
+            {
+                correctParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                correctParticles.Play();
+            }
+        }
 
         materialInstance.SetFloat(IsCorrectProperty, isCorrect ? 1f : 0f);
         wasCorrect = isCorrect;
