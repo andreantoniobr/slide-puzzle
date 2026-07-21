@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_Piramide 2 - 5x3 - 5 Vazios - 29 Movimentos
+  m_Name: Level_9 - 3x5 - 7 Vazios - 58 Movimentos
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: Level 2x3
-  gridWidth: 5
-  gridHeight: 3
-  disabledCells: 0000000001000000030000000400000005000000
-  emptyTileCount: 3
+  gridWidth: 4
+  gridHeight: 5
+  disabledCells: 00000000010000000300000004000000050000001000000013000000
+  emptyTileCount: 4
   mode: 1
   shuffleMoves: 120
   seed: 12345
-  customArrangement: 0700000009000000060000000c0000000e0000000a00000002000000080000000b0000000d000000
+  customArrangement: 0b0000000e0000000600000009000000110000000c0000000800000007000000120000000f0000000a0000000d00000002000000
   tutorialStage: {fileID: 0}

@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_3 - 2x3 - 2 Vazios
+  m_Name: Level_2 - 2x3 - 2 vazios - 3 Movimentos
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: Level 2x3
-  gridWidth: 2
-  gridHeight: 3
-  disabledCells: 
+  gridWidth: 3
+  gridHeight: 2
+  disabledCells: 00000000
   emptyTileCount: 2
   mode: 1
-  shuffleMoves: 30
-  seed: 2
-  customArrangement: 020000000000000003000000050000000400000001000000
+  shuffleMoves: 120
+  seed: 12345
+  customArrangement: 0200000005000000040000000300000001000000
   tutorialStage: {fileID: 0}

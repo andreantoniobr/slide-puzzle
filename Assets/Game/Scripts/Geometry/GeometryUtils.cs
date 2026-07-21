@@ -146,5 +146,12 @@ namespace BoardFrame.Geometry
             int estimated = Mathf.CeilToInt(Mathf.Abs(angleDeltaRadians) * segmentsPerRadian);
             return Mathf.Clamp(estimated, minSegments, maxSegments);
         }
+
+        public static Vector2 EvaluateQuadraticBezier(Vector2 a, Vector2 b, Vector2 c, float t)
+        {
+            Vector2 p0 = Vector2.Lerp(a, b, t);
+            Vector2 p1 = Vector2.Lerp(b, c, t);
+            return Vector2.Lerp(p0, p1, t);
+        }
     }
 }

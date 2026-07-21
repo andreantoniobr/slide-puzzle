@@ -41,7 +41,7 @@ namespace BoardFrame.Geometry
             for (int i = 1; i < m; i++)
             {
                 float segmentLength = Vector2.Distance(ordered[i - 1].outerPosition, ordered[i].outerPosition);
-                
+
                 if (ordered[i].innerPosition == ordered[i - 1].innerPosition)
                 {
                     segmentLength *= 0.5f; 
