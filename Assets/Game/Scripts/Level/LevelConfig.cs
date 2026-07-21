@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// Contrato comum entre níveis feitos à mão e níveis procedurais.
@@ -7,7 +8,9 @@ using System;
 [Serializable]
 public class LevelConfig
 {
-    public int gridSize;
+    public int gridWidth;
+    public int gridHeight;
+    public List<int> disabledCells;
     public int shuffleMoves;
     public int seed;
 

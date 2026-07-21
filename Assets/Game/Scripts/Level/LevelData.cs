@@ -10,7 +10,12 @@ public class LevelData : ScriptableObject
     public string levelName = "Nível";
 
     [Header("Tamanho")]
-    [Range(2, 8)] public int gridSize = 4;
+    public int gridWidth = 4;
+    public int gridHeight = 4;
+
+    [Header("Formato (buracos)")]
+    [Tooltip("Posições do grid (0-based, row-major: row*gridWidth+col) que NÃO existem no tabuleiro.")]
+    public List<int> disabledCells = new List<int>();
 
     [Header("Espaços Vazios")]
     [Range(1, 4)]
@@ -24,28 +29,33 @@ public class LevelData : ScriptableObject
     public int seed = 12345;
 
     [Header("Arranjo Personalizado (opcional)")]
-    [Tooltip("Tamanho deve ser gridSize*gridSize. customArrangement[i] = posição inicial da peça número (i+1). Deixe vazio para usar Embaralhado.")]
+    [Tooltip("Tamanho deve ser igual ao número de células ativas (gridWidth*gridHeight - buracos). customArrangement[tileId] = posição no grid onde a peça (tileId+1) começa. Deixe vazio para usar Embaralhado.")]
     public List<int> customArrangement = new List<int>();
 
     [Header("Tutorial (opcional)")]
     [Tooltip("Se definido, este tutorial é exibido quando o nível carrega (e ainda não foi visto).")]
     public TutorialStageData tutorialStage;
 
+    /// <summary>Quantas células realmente existem no tabuleiro (grid total menos buracos).</summary>
+    public int TotalActiveCells => (gridWidth * gridHeight) - (disabledCells?.Count ?? 0);
+
     public LevelConfig ToConfig()
     {
         var config = new LevelConfig
         {
-            gridSize = gridSize,
-            shuffleMoves = shuffleMoves,
-            seed = seed,
-            customBoard = null,
+            gridWidth      = gridWidth,
+            gridHeight     = gridHeight,
+            disabledCells  = disabledCells != null ? new List<int>(disabledCells) : new List<int>(),
+            shuffleMoves   = shuffleMoves,
+            seed           = seed,
+            customBoard    = null,
             emptyTileCount = emptyTileCount,
             tutorialStage  = tutorialStage
         };
 
         if (mode == LevelMode.ArranjoPersonalizado &&
             customArrangement != null &&
-            customArrangement.Count == gridSize * gridSize)
+            customArrangement.Count == TotalActiveCells)
         {
             config.customBoard = customArrangement.ToArray();
         }

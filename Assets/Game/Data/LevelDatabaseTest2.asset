@@ -10,11 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92d29afbbd75f1348bd3850b37cf6870, type: 3}
-  m_Name: LevelDatabase
+  m_Name: LevelDatabaseTest2
   m_EditorClassIdentifier: Assembly-CSharp::LevelDatabase
   levels:
   - {fileID: 11400000, guid: 7e289498e1cf2f14c9510344da439321, type: 2}
-  - {fileID: 11400000, guid: dab253bf83d688c49ae1946bbf5459d1, type: 2}
+  - {fileID: 11400000, guid: eb5ac05961cd72b448a0572f6ca1a140, type: 2}
+  - {fileID: 11400000, guid: 3eda512046122d74abaa10c06cbac339, type: 2}
+  - {fileID: 11400000, guid: 6065f7b74a21e0c4c9a17152674eb5d5, type: 2}
+  - {fileID: 11400000, guid: 77ddefea74bfbf24e8039d4ae64dc9d3, type: 2}
+  - {fileID: 11400000, guid: 46bad8c7c9b4e154c8ea0bc0f3cea3c0, type: 2}
+  - {fileID: 11400000, guid: 484b4a4499b06ff469e21271cc7e79a2, type: 2}
+  - {fileID: 11400000, guid: 5e2cce90ea190fb44a9614191b6e45c4, type: 2}
+  - {fileID: 11400000, guid: 26fec0f0a73850441bdbd025cce87858, type: 2}
   - {fileID: 11400000, guid: 39c4f42c5f864314a8e3a092866c3229, type: 2}
   - {fileID: 11400000, guid: 479d15e21773c06469a5888fcf7ec54d, type: 2}
   - {fileID: 11400000, guid: 71ba36a3f3948bb4c951ae82b77965ec, type: 2}
