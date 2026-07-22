@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using BoardFrame.UI;
 
 public class NumberPuzzleManager : MonoBehaviour
 {
@@ -10,11 +11,17 @@ public class NumberPuzzleManager : MonoBehaviour
     public GameObject    tilePrefab;
     public RectTransform boardPanel;
 
-    [Range(2, 8)]
-    public int gridSize = 4;
+    [Range(1, 8)]
+    public int gridWidth = 4;
+    [Range(1, 8)]
+    public int gridHeight = 4;
+
+    [Header("Formato (buracos)")]
+    [Tooltip("Posições do grid (0-based, row-major: row*gridWidth+col) que NÃO existem no tabuleiro.")]
+    [SerializeField] private List<int> disabledCells = new List<int>();
 
     [Header("Espaços Vazios")]
-    [Range(1, 4)]
+    [Min(1)]
     public int emptyTileCount = 1;
 
     [Header("Aparência")]
@@ -39,6 +46,12 @@ public class NumberPuzzleManager : MonoBehaviour
     [SerializeField] private bool showBackgroundNumbers = true;
     [SerializeField] private NumberPuzzleBackgroundController backgroundController;
 
+    [Header("Moldura (mesh único)")]
+    [SerializeField] private BoardFrameMesh boardFrameMesh;
+
+    [Header("Fundo do Tabuleiro (caixa)")]
+    [SerializeField] private BoardBackgroundController boardBackgroundController;
+
     [Header("UI (opcional)")]
     public Text   movesText;
     public Text   statusText;
@@ -54,15 +67,21 @@ public class NumberPuzzleManager : MonoBehaviour
     public static event Action             HighlightShownEvent;
 
     // ── Estado privado ───────────────────────────────────────────────
-    private NumberTile[] tiles;
-    private int[]        board;
-    private List<int>    emptyIndexes = new List<int>();
-    private int          totalTiles;
+    private NumberTile[] tiles;              // indexado por tileId (identidade lógica da peça)
+    private int[]        board;              // indexado por posição do grid; -1 = buraco (nunca usado)
+    private List<int>    activeCells;        // posições do grid que existem, em ordem — activeCells[tileId] = posição correta daquele tileId
+    private Dictionary<int, int> gridPosToCorrectTileId; // posição do grid -> tileId que pertence ali quando resolvido
+    private List<int>    emptyIndexes = new List<int>(); // posições do grid (não tileIds) que estão vazias agora
+    private int          totalActiveCells;
     private int          moveCount;
     private bool         puzzleSolved;
     private bool         isAnimating;
 
     private NumberTile pendingSelectionTile;
+
+    // Layout unificado — evita distorção em grids não-quadrados
+    private float cellSize;
+    private Vector2 boardOrigin;
 
     // controla o tempo de jogo
     private float puzzleStartTime;
@@ -94,55 +113,107 @@ public class NumberPuzzleManager : MonoBehaviour
     }
 
     // ────────────────────────────────────────────────────────────────
+    //  Layout (tamanho de célula unificado, sem distorção)
+    // ────────────────────────────────────────────────────────────────
+
+    private void ComputeLayout()
+    {
+        float panelW = boardPanel.rect.width;
+        float panelH = boardPanel.rect.height;
+
+        float cellFromWidth  = (panelW - gapSize * (gridWidth + 1)) / gridWidth;
+        float cellFromHeight = (panelH - gapSize * (gridHeight + 1)) / gridHeight;
+        cellSize = Mathf.Min(cellFromWidth, cellFromHeight); // nunca distorce — sempre quadrado
+
+        float boardWidth  = gridWidth  * cellSize + gapSize * (gridWidth + 1);
+        float boardHeight = gridHeight * cellSize + gapSize * (gridHeight + 1);
+
+        boardOrigin = new Vector2(
+            (panelW - boardWidth) * 0.5f,
+            (panelH - boardHeight) * 0.5f
+        );
+    }
+
+    // ────────────────────────────────────────────────────────────────
     //  Construção
     // ────────────────────────────────────────────────────────────────
+
+    private void ComputeActiveCells()
+    {
+        activeCells = new List<int>();
+        int totalGridCells = gridWidth * gridHeight;
+
+        for (int pos = 0; pos < totalGridCells; pos++)
+        {
+            if (!disabledCells.Contains(pos))
+                activeCells.Add(pos);
+        }
+
+        totalActiveCells = activeCells.Count;
+
+        gridPosToCorrectTileId = new Dictionary<int, int>();
+        for (int tileId = 0; tileId < activeCells.Count; tileId++)
+            gridPosToCorrectTileId[activeCells[tileId]] = tileId;
+    }
 
     public void BuildBoard()
     {
         ClearBoard();
+        ComputeActiveCells();
+        ComputeLayout();
 
-        totalTiles = gridSize * gridSize;
-        board      = new int[totalTiles];
-        tiles      = new NumberTile[totalTiles];
+        int totalGridCells = gridWidth * gridHeight;
+        board = new int[totalGridCells];
+        for (int i = 0; i < totalGridCells; i++) board[i] = -1; // -1 = buraco
+
+        tiles = new NumberTile[totalActiveCells];
         emptyIndexes.Clear();
 
-        float panelW = boardPanel.rect.width;
-        float panelH = boardPanel.rect.height;
-        float cellW  = (panelW - gapSize * (gridSize + 1)) / gridSize;
-        float cellH  = (panelH - gapSize * (gridSize + 1)) / gridSize;
-
-        int fontSize = Mathf.Clamp(Mathf.RoundToInt(cellW * fontSizePercent), minFontSize, maxFontSize);
-        int firstEmptyId = totalTiles - emptyTileCount;
+        int fontSize = Mathf.Clamp(Mathf.RoundToInt(cellSize * fontSizePercent), minFontSize, maxFontSize);
+        int firstEmptyId = totalActiveCells - emptyTileCount;
 
         if (backgroundController != null)
         {
             backgroundController.SetVisible(showBackgroundNumbers);
             if (showBackgroundNumbers)
-                backgroundController.Build(firstEmptyId, CellPosition, cellW, cellH, fontSize);
+                backgroundController.Build(firstEmptyId, activeCells, CellPosition, cellSize, fontSize);
         }
 
-        for (int i = 0; i < totalTiles; i++)
+        for (int tileId = 0; tileId < totalActiveCells; tileId++)
         {
-            board[i] = i;
-            bool isEmpty = (i >= firstEmptyId);
+            int gridPos = activeCells[tileId];
+            board[gridPos] = tileId;
+
+            bool isEmpty = (tileId >= firstEmptyId);
 
             GameObject go = Instantiate(tilePrefab, boardPanel);
-            go.name = isEmpty ? $"Tile_Empty_{i}" : $"Tile_{i + 1}";
+            go.name = isEmpty ? $"Tile_Empty_{tileId}" : $"Tile_{tileId + 1}";
 
             RectTransform rt = go.GetComponent<RectTransform>();
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
             rt.pivot      = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta  = new Vector2(cellW, cellH);
-            rt.anchoredPosition = CellPosition(i, cellW, cellH);
+            rt.sizeDelta  = new Vector2(cellSize, cellSize);
+            rt.anchoredPosition = CellPosition(gridPos);
 
             NumberTile tile = go.GetComponent<NumberTile>();
             if (tile.numberText != null)
                 tile.numberText.fontSize = fontSize;
 
-            tile.Init(this, i, i, isEmpty);
-            tiles[i] = tile;
+            tile.Init(this, tileId, gridPos, isEmpty);
+            tiles[tileId] = tile;
 
-            if (isEmpty) emptyIndexes.Add(i);
+            if (isEmpty) emptyIndexes.Add(gridPos);
+        }
+
+        if (boardFrameMesh != null)
+        {
+            var activeSet = new HashSet<int>(activeCells);
+            boardFrameMesh.Build(gridWidth, gridHeight, activeSet, CellPosition, cellSize);
+        }
+
+        if (boardBackgroundController != null)
+        {
+            boardBackgroundController.Build(activeCells, CellPosition, cellSize, gapSize); 
         }
 
         UpdateMovesUI();
@@ -165,7 +236,7 @@ public class NumberPuzzleManager : MonoBehaviour
         if (isAnimating || puzzleSolved) return true;
 
         if (pendingSelectionTile != null && pendingSelectionTile != tile)
-            CancelTargetSelection(); // clicou em outra peça — cancela a seleção anterior
+            CancelTargetSelection();
 
         int tileIdx = tile.currentIndex;
         List<int> adjacentEmpties = FindAllAdjacentEmpty(tileIdx);
@@ -180,7 +251,7 @@ public class NumberPuzzleManager : MonoBehaviour
         if (adjacentEmpties.Count > 1)
         {
             BeginTargetSelection(tile, adjacentEmpties);
-            return true; // não é "inválido" — está aguardando escolha
+            return true;
         }
 
         if (emptyIndexes.Count == 1)
@@ -204,7 +275,7 @@ public class NumberPuzzleManager : MonoBehaviour
         CancelTargetSelection();
 
         pendingSelectionTile = tile;
-        tile.SetAwaitingSelection(true); // NOVO — ativa o glow rotativo na peça clicada
+        tile.SetAwaitingSelection(true);
 
         foreach (int emptyPos in availableEmpties)
         {
@@ -229,7 +300,7 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         if (pendingSelectionTile == null) return;
 
-        pendingSelectionTile.SetAwaitingSelection(false); // NOVO — desliga o glow ao cancelar/confirmar
+        pendingSelectionTile.SetAwaitingSelection(false);
 
         foreach (int emptyPos in emptyIndexes)
             GetTileAtIndex(emptyPos)?.SetSelectableTarget(false);
@@ -245,10 +316,6 @@ public class NumberPuzzleManager : MonoBehaviour
         return result;
     }
 
-    /// <summary>
-    /// Chamado pelo NumberTile assim que o jogador toca em qualquer peça (PointerDown),
-    /// independente de o toque resultar em movimento. Marca o início real de gameplay.
-    /// </summary>
     public void NotifyPlayerInput()
     {
         if (hasFiredFirstInput || puzzleSolved) return;
@@ -296,8 +363,8 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private DragDirection GetDirectionToEmpty(int tileIdx, int emptyIdx)
     {
-        int rTile = tileIdx / gridSize, cTile = tileIdx % gridSize;
-        int rEmpty = emptyIdx / gridSize, cEmpty = emptyIdx % gridSize;
+        int rTile = tileIdx / gridWidth, cTile = tileIdx % gridWidth;
+        int rEmpty = emptyIdx / gridWidth, cEmpty = emptyIdx % gridWidth;
 
         int dr = rEmpty - rTile;
         int dc = cEmpty - cTile;
@@ -315,10 +382,10 @@ public class NumberPuzzleManager : MonoBehaviour
         if (emptyIndexes.Count != 1) return DragDirection.None;
         int emptyIdx = emptyIndexes[0];
 
-        int rTile  = tileIndex  / gridSize;
-        int cTile  = tileIndex  % gridSize;
-        int rEmpty = emptyIdx / gridSize;
-        int cEmpty = emptyIdx % gridSize;
+        int rTile  = tileIndex  / gridWidth;
+        int cTile  = tileIndex  % gridWidth;
+        int rEmpty = emptyIdx / gridWidth;
+        int cEmpty = emptyIdx % gridWidth;
 
         if (rTile == rEmpty && cEmpty > cTile) return DragDirection.Right;
         if (rTile == rEmpty && cEmpty < cTile) return DragDirection.Left;
@@ -337,10 +404,10 @@ public class NumberPuzzleManager : MonoBehaviour
         if (emptyIndexes.Count != 1) return null;
         int emptyIdx = emptyIndexes[0];
 
-        int rTarget = targetIndex / gridSize;
-        int cTarget = targetIndex % gridSize;
-        int rEmpty  = emptyIdx    / gridSize;
-        int cEmpty  = emptyIdx    % gridSize;
+        int rTarget = targetIndex / gridWidth;
+        int cTarget = targetIndex % gridWidth;
+        int rEmpty  = emptyIdx    / gridWidth;
+        int cEmpty  = emptyIdx    % gridWidth;
 
         if (rTarget == rEmpty && cTarget != cEmpty)
         {
@@ -348,8 +415,9 @@ public class NumberPuzzleManager : MonoBehaviour
             int step  = cTarget > cEmpty ? 1 : -1;
             for (int c = cEmpty + step; step > 0 ? c <= cTarget : c >= cTarget; c += step)
             {
-                int        idx = rEmpty * gridSize + c;
-                NumberTile t   = GetTileAtIndex(idx);
+                int idx = rEmpty * gridWidth + c;
+                if (disabledCells.Contains(idx)) return null;
+                NumberTile t = GetTileAtIndex(idx);
                 if (t != null && !t.isEmpty) chain.Add(t);
             }
             return chain;
@@ -361,8 +429,9 @@ public class NumberPuzzleManager : MonoBehaviour
             int step  = rTarget > rEmpty ? 1 : -1;
             for (int r = rEmpty + step; step > 0 ? r <= rTarget : r >= rTarget; r += step)
             {
-                int        idx = r * gridSize + cEmpty;
-                NumberTile t   = GetTileAtIndex(idx);
+                int idx = r * gridWidth + cEmpty;
+                if (disabledCells.Contains(idx)) return null;
+                NumberTile t = GetTileAtIndex(idx);
                 if (t != null && !t.isEmpty) chain.Add(t);
             }
             return chain;
@@ -375,32 +444,27 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         isAnimating = true;
 
-        float panelW = boardPanel.rect.width;
-        float panelH = boardPanel.rect.height;
-        float cellW  = (panelW - gapSize * (gridSize + 1)) / gridSize;
-        float cellH  = (panelH - gapSize * (gridSize + 1)) / gridSize;
-
         var moves = new List<(RectTransform rt, Vector2 from, Vector2 to)>();
 
         foreach (NumberTile tile in chain)
         {
-            int fromIndex   = tile.currentIndex;
-            int emptyIdx    = emptyIndexes[0];
+            int fromIndex = tile.currentIndex;
+            int emptyIdx  = emptyIndexes[0];
 
             NumberTile    emptyTile = GetTileAtIndex(emptyIdx);
             RectTransform tileRT    = tile.GetComponent<RectTransform>();
 
-            Vector2 startPos  = CellPosition(fromIndex, cellW, cellH);
-            Vector2 targetPos = CellPosition(emptyIdx, cellW, cellH);
+            Vector2 startPos  = CellPosition(fromIndex);
+            Vector2 targetPos = CellPosition(emptyIdx);
 
             moves.Add((tileRT, startPos, targetPos));
 
-            board[emptyIdx]         = board[fromIndex];
-            board[fromIndex]        = emptyTile.correctIndex;
-            tile.currentIndex       = emptyIdx;
-            emptyTile.currentIndex  = fromIndex;
+            board[emptyIdx]        = board[fromIndex];
+            board[fromIndex]       = emptyTile.correctIndex;
+            tile.currentIndex      = emptyIdx;
+            emptyTile.currentIndex = fromIndex;
 
-            emptyIndexes[0] = fromIndex; // move o vazio pra posição que a peça deixou
+            emptyIndexes[0] = fromIndex;
 
             moveCount++;
             SlidedTileEvent?.Invoke();
@@ -426,7 +490,7 @@ public class NumberPuzzleManager : MonoBehaviour
         foreach (var (rt, _, to) in moves)
             rt.anchoredPosition = to;
 
-        emptyRTFinal.anchoredPosition = CellPosition(finalEmptyIdx, cellW, cellH);
+        emptyRTFinal.anchoredPosition = CellPosition(finalEmptyIdx);
         emptyRTFinal.gameObject.SetActive(true);
 
         foreach (NumberTile tile in chain)
@@ -513,7 +577,7 @@ public class NumberPuzzleManager : MonoBehaviour
         {
             int emptyPos = emptyIndexes[UnityEngine.Random.Range(0, emptyIndexes.Count)];
             List<int> neighbors = GetValidNeighbors(emptyPos);
-            neighbors.RemoveAll(n => emptyIndexes.Contains(n)); // não troca vazio com vazio
+            neighbors.RemoveAll(n => emptyIndexes.Contains(n));
 
             if (neighbors.Count == 0) continue;
 
@@ -530,27 +594,33 @@ public class NumberPuzzleManager : MonoBehaviour
         PuzzleStartedEvent?.Invoke();
     }
 
-    // embaralha de forma determinística (mesmo seed = mesmo resultado)
     public void ShuffleDeterministic(int seed)
     {
         UnityEngine.Random.State previousState = UnityEngine.Random.state;
         UnityEngine.Random.InitState(seed);
         Shuffle();
-        UnityEngine.Random.state = previousState; // não polui o RNG global
+        UnityEngine.Random.state = previousState;
     }
 
-    // carrega um nível a partir de um LevelConfig (feito à mão ou procedural)
+    /// <summary>Carrega um nível a partir de um LevelConfig (feito à mão ou procedural).</summary>
     public void LoadLevel(LevelConfig config)
     {
-        gridSize = Mathf.Clamp(config.gridSize, 2, 8);
+        gridWidth  = Mathf.Clamp(config.gridWidth,  1, 8);
+        gridHeight = Mathf.Clamp(config.gridHeight, 1, 8);
+
+        disabledCells = config.disabledCells != null
+            ? new List<int>(config.disabledCells)
+            : new List<int>();
+
         if (config.shuffleMoves > 0) shuffleMoves = config.shuffleMoves;
 
-        int maxEmpty = Mathf.Max(1, (gridSize * gridSize) / 2);
+        int approxTotalCells = Mathf.Max(1, gridWidth * gridHeight - disabledCells.Count);
+        int maxEmpty = Mathf.Max(1, approxTotalCells / 2);
         emptyTileCount = Mathf.Clamp(config.emptyTileCount > 0 ? config.emptyTileCount : 1, 1, maxEmpty);
 
         BuildBoard();
 
-        if (config.customBoard != null && config.customBoard.Length == gridSize * gridSize)
+        if (config.customBoard != null && config.customBoard.Length == totalActiveCells)
             ApplyCustomArrangement(config.customBoard);
         else
             ShuffleDeterministic(config.seed);
@@ -565,12 +635,12 @@ public class NumberPuzzleManager : MonoBehaviour
         if (statusText != null) statusText.text = "";
 
         emptyIndexes.Clear();
-        for (int i = 0; i < totalTiles; i++)
+        for (int tileId = 0; tileId < totalActiveCells; tileId++)
         {
-            int idx = arrangement[i];
-            tiles[i].currentIndex = idx;
-            board[idx] = i;
-            if (tiles[i].isEmpty) emptyIndexes.Add(idx);
+            int gridPos = arrangement[tileId];
+            tiles[tileId].currentIndex = gridPos;
+            board[gridPos] = tileId;
+            if (tiles[tileId].isEmpty) emptyIndexes.Add(gridPos);
         }
 
         RefreshVisualPositions();
@@ -582,10 +652,9 @@ public class NumberPuzzleManager : MonoBehaviour
         PuzzleStartedEvent?.Invoke();
     }
 
-    // reinicia o nível atual EXATAMENTE como estava no começo (sem re-embaralhar)
     public void RestartLevel()
     {
-        if (initialTileIndexes == null || initialTileIndexes.Length != totalTiles)
+        if (initialTileIndexes == null || initialTileIndexes.Length != totalActiveCells)
         {
             Shuffle();
             return;
@@ -598,12 +667,12 @@ public class NumberPuzzleManager : MonoBehaviour
         if (statusText != null) statusText.text = "";
 
         emptyIndexes.Clear();
-        for (int i = 0; i < totalTiles; i++)
+        for (int tileId = 0; tileId < totalActiveCells; tileId++)
         {
-            int idx = initialTileIndexes[i];
-            tiles[i].currentIndex = idx;
-            board[idx] = i;
-            if (tiles[i].isEmpty) emptyIndexes.Add(idx);
+            int gridPos = initialTileIndexes[tileId];
+            tiles[tileId].currentIndex = gridPos;
+            board[gridPos] = tileId;
+            if (tiles[tileId].isEmpty) emptyIndexes.Add(gridPos);
         }
 
         RefreshVisualPositions();
@@ -616,9 +685,9 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private void SaveInitialState()
     {
-        initialTileIndexes = new int[totalTiles];
-        for (int i = 0; i < totalTiles; i++)
-            initialTileIndexes[i] = tiles[i].currentIndex;
+        initialTileIndexes = new int[totalActiveCells];
+        for (int tileId = 0; tileId < totalActiveCells; tileId++)
+            initialTileIndexes[tileId] = tiles[tileId].currentIndex;
     }
 
     private void SwapLogical(int a, int b)
@@ -639,16 +708,13 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private void RefreshVisualPositions()
     {
-        float panelW = boardPanel.rect.width;
-        float panelH = boardPanel.rect.height;
-        float cellW  = (panelW - gapSize * (gridSize + 1)) / gridSize;
-        float cellH  = (panelH - gapSize * (gridSize + 1)) / gridSize;
+        ComputeLayout();
 
-        for (int i = 0; i < totalTiles; i++)
+        foreach (int gridPos in activeCells)
         {
-            NumberTile t = GetTileAtIndex(i);
+            NumberTile t = GetTileAtIndex(gridPos);
             if (t != null)
-                t.GetComponent<RectTransform>().anchoredPosition = CellPosition(i, cellW, cellH);
+                t.GetComponent<RectTransform>().anchoredPosition = CellPosition(gridPos);
         }
     }
 
@@ -663,16 +729,17 @@ public class NumberPuzzleManager : MonoBehaviour
 
     public void SolveInstant()
     {
-        for (int i = 0; i < totalTiles; i++)
+        for (int tileId = 0; tileId < totalActiveCells; tileId++)
         {
-            board[i]              = i;
-            tiles[i].currentIndex = i;
+            int gridPos = activeCells[tileId];
+            board[gridPos] = tileId;
+            tiles[tileId].currentIndex = gridPos;
         }
 
         emptyIndexes.Clear();
-        int firstEmptyId = totalTiles - emptyTileCount;
-        for (int id = firstEmptyId; id < totalTiles; id++)
-            emptyIndexes.Add(id);
+        int firstEmptyId = totalActiveCells - emptyTileCount;
+        for (int tileId = firstEmptyId; tileId < totalActiveCells; tileId++)
+            emptyIndexes.Add(activeCells[tileId]);
 
         RefreshVisualPositions();
         RefreshAllColors();
@@ -756,19 +823,20 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private bool CheckWin()
     {
-        int firstEmptyId = totalTiles - emptyTileCount;
+        int firstEmptyId = totalActiveCells - emptyTileCount;
 
-        for (int i = 0; i < totalTiles; i++)
+        foreach (int gridPos in activeCells)
         {
-            if (i < firstEmptyId)
+            int tileIdHere = board[gridPos];
+            int correctTileId = gridPosToCorrectTileId[gridPos];
+
+            if (correctTileId < firstEmptyId)
             {
-                // célula numerada: precisa ser exatamente a peça correta
-                if (board[i] != i) return false;
+                if (tileIdHere != correctTileId) return false;
             }
             else
             {
-                // célula de espaço vazio: qualquer peça vazia serve aqui, não precisa ser a MESMA identidade
-                if (board[i] < firstEmptyId) return false;
+                if (tileIdHere < firstEmptyId) return false;
             }
         }
 
@@ -794,38 +862,44 @@ public class NumberPuzzleManager : MonoBehaviour
     //  Utilitários
     // ────────────────────────────────────────────────────────────────
 
-    private Vector2 CellPosition(int index, float cellW, float cellH)
+    private Vector2 CellPosition(int index)
     {
-        float x =  gapSize + (index % gridSize) * (cellW + gapSize) + cellW * 0.5f;
-        float y = -(gapSize + (index / gridSize) * (cellH + gapSize) + cellH * 0.5f);
+        int col = index % gridWidth;
+        int row = index / gridWidth;
+        float x =  boardOrigin.x + gapSize + col * (cellSize + gapSize) + cellSize * 0.5f;
+        float y = -(boardOrigin.y + gapSize + row * (cellSize + gapSize) + cellSize * 0.5f);
         return new Vector2(x, y);
     }
 
     private Vector2 CanonicalPosition(int index)
     {
-        float panelW = boardPanel.rect.width;
-        float panelH = boardPanel.rect.height;
-        float cellW  = (panelW - gapSize * (gridSize + 1)) / gridSize;
-        float cellH  = (panelH - gapSize * (gridSize + 1)) / gridSize;
-        return CellPosition(index, cellW, cellH);
+        return CellPosition(index);
     }
 
     private bool IsAdjacent(int a, int b)
     {
-        int rA = a / gridSize, cA = a % gridSize;
-        int rB = b / gridSize, cB = b % gridSize;
+        int rA = a / gridWidth, cA = a % gridWidth;
+        int rB = b / gridWidth, cB = b % gridWidth;
         return Mathf.Abs(rA - rB) + Mathf.Abs(cA - cB) == 1;
     }
 
     private List<int> GetValidNeighbors(int index)
     {
         var list = new List<int>();
-        int r = index / gridSize, c = index % gridSize;
-        if (r > 0)            list.Add((r - 1) * gridSize + c);
-        if (r < gridSize - 1) list.Add((r + 1) * gridSize + c);
-        if (c > 0)            list.Add(r * gridSize + (c - 1));
-        if (c < gridSize - 1) list.Add(r * gridSize + (c + 1));
+        int r = index / gridWidth, c = index % gridWidth;
+
+        if (r > 0)              TryAddNeighbor(list, (r - 1) * gridWidth + c);
+        if (r < gridHeight - 1) TryAddNeighbor(list, (r + 1) * gridWidth + c);
+        if (c > 0)              TryAddNeighbor(list, r * gridWidth + (c - 1));
+        if (c < gridWidth - 1)  TryAddNeighbor(list, r * gridWidth + (c + 1));
+
         return list;
+    }
+
+    private void TryAddNeighbor(List<int> list, int candidatePos)
+    {
+        if (!disabledCells.Contains(candidatePos))
+            list.Add(candidatePos);
     }
 
     private NumberTile GetTileAtIndex(int index)
@@ -844,10 +918,6 @@ public class NumberPuzzleManager : MonoBehaviour
     //  Suporte ao Tutorial
     // ────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Retorna o RectTransform de uma peça adjacente a um vazio (movível agora)
-    /// e o RectTransform do vazio correspondente — usado pelo tutorial de swipe básico.
-    /// </summary>
     public (RectTransform tile, RectTransform target) GetFirstMovableTileAndTarget()
     {
         NumberTile bestTile = null;
@@ -861,8 +931,8 @@ public class NumberPuzzleManager : MonoBehaviour
                 NumberTile t = GetTileAtIndex(n);
                 if (t == null || t.isEmpty) continue;
 
-                // Quão longe a peça ficaria do destino CORRETO dela após esse movimento
-                int distanceAfterMove = ManhattanDistance(emptyPos, t.correctIndex);
+                int correctGridPos = activeCells[t.correctIndex];
+                int distanceAfterMove = ManhattanDistance(emptyPos, correctGridPos);
 
                 if (distanceAfterMove < bestScore)
                 {
@@ -881,14 +951,11 @@ public class NumberPuzzleManager : MonoBehaviour
 
     private int ManhattanDistance(int a, int b)
     {
-        int rA = a / gridSize, cA = a % gridSize;
-        int rB = b / gridSize, cB = b % gridSize;
+        int rA = a / gridWidth, cA = a % gridWidth;
+        int rB = b / gridWidth, cB = b % gridWidth;
         return Mathf.Abs(rA - rB) + Mathf.Abs(cA - cB);
     }
 
-    /// <summary>
-    /// Acha uma peça com 2+ vazios adjacentes — usada pelo tutorial de escolha de destino.
-    /// </summary>
     public (RectTransform tile, RectTransform target) GetFirstAmbiguousTileAndTarget()
     {
         foreach (NumberTile tile in tiles)
@@ -903,5 +970,5 @@ public class NumberPuzzleManager : MonoBehaviour
             }
         }
         return (null, null);
-    }   
+    }
 }

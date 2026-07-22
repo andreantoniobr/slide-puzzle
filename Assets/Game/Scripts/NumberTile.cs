@@ -13,11 +13,11 @@ using System;
 ///
 ///   CLIQUE/TAP
 ///     IPointerDownHandler + IPointerUpHandler
-///     Se o dedo soltou sem arrastar (delta < SWIPE_THRESHOLD), trata como clique.
+///     Se o dedo soltou sem arrastar (delta < swipeThreshold), trata como clique.
 ///
 ///   SWIPE
 ///     IPointerDownHandler + IPointerUpHandler
-///     Se o delta >= SWIPE_THRESHOLD, determina a direção dominante e chama TryMove.
+///     Se o delta >= swipeThreshold, determina a direção dominante e chama TryMove.
 ///     A peça NÃO acompanha o dedo em momento algum — o swipe é apenas um gatilho.
 ///
 /// IDragHandler é implementado unicamente para suprimir o scroll do ScrollRect pai
@@ -51,35 +51,31 @@ public class NumberTile : MonoBehaviour,
     [Header("Glow de Posição Correta")]
     [SerializeField] private TileCorrectGlowEffect correctGlowEffect;
 
-    [HideInInspector] public int  correctIndex;
-    [HideInInspector] public int  currentIndex;
+    [HideInInspector] public int  correctIndex;        // tileId — identidade lógica da peça (0..totalActiveCells-1)
+    [HideInInspector] public int  correctGridPosition; // posição no grid onde esta peça pertence quando resolvida
+    [HideInInspector] public int  currentIndex;        // posição atual no grid (pode ter "buracos" no meio)
     [HideInInspector] public bool isEmpty;
 
     [Header("Seleção de Destino (clique em vazio)")]
-    [SerializeField] private Color selectableEmptyColor = new Color(0.3f, 0.8f, 1f, 0.4f);   
+    [SerializeField] private Color selectableEmptyColor = new Color(0.3f, 0.8f, 1f, 0.4f);
 
     public void SetAwaitingSelection(bool awaiting)
     {
         correctGlowEffect?.SetSelected(awaiting);
     }
 
-
     // Paleta
     [SerializeField] private Color TileColor        = new Color(1f,    1f,    1f,    1f);
     [SerializeField] private Color TileCorrectColor = new Color(0.64f, 1f,    0.35f, 1f);
 
-    
     [Header("Text Color")]
     [SerializeField] private Color TextTileColor        = new Color(0.34f, 0.20f, 0.125f, 1f);
-    [SerializeField] private Color TextTileCorrectColor = new Color(0.64f, 1f,    0.35f,  1f); 
+    [SerializeField] private Color TextTileCorrectColor = new Color(0.64f, 1f,    0.35f,  1f);
     private static readonly Color HighlightColor = new Color(1f, 0.85f, 0.20f, 0.55f);
-
 
     [Header("Feedback de Movimento Inválido")]
     [SerializeField] private float invalidMoveShrinkFactor = 0.85f;
     [SerializeField] private float invalidMoveDuration = 0.15f;
-
-    private bool isPlayingInvalidFeedback;
 
     // ────────────────────────────────────────────────────────────────
     //  Eventos públicos
@@ -117,12 +113,17 @@ public class NumberTile : MonoBehaviour,
     //  Inicialização
     // ────────────────────────────────────────────────────────────────
 
+    /// <param name="mgr">Manager dono deste tile.</param>
+    /// <param name="correct">TileId — identidade lógica da peça.</param>
+    /// <param name="current">Posição no grid onde a peça nasce (sempre a posição correta, no momento da construção).</param>
+    /// <param name="empty">Se esta peça representa um espaço vazio.</param>
     public void Init(NumberPuzzleManager mgr, int correct, int current, bool empty)
     {
-        manager      = mgr;
-        correctIndex = correct;
-        currentIndex = current;
-        isEmpty      = empty;
+        manager             = mgr;
+        correctIndex        = correct;
+        correctGridPosition = current; // no Init, a peça sempre nasce na posição correta dela
+        currentIndex        = current;
+        isEmpty             = empty;
 
         if (highlightOverlay != null) highlightOverlay.color = Color.clear;
 
@@ -145,7 +146,7 @@ public class NumberTile : MonoBehaviour,
             return;
         }
 
-        int number = correctIndex + 1;
+        int number = correctIndex + 1; // 1-based para o jogador
         if (numberText != null) numberText.text = number.ToString();
 
         bool inPlace = IsInCorrectPosition();
@@ -156,7 +157,7 @@ public class NumberTile : MonoBehaviour,
         if (numberText != null)
             numberText.color = inPlace ? TextTileCorrectColor : TextTileColor;
 
-        correctGlowEffect?.SetCorrect(inPlace); // NOVO
+        correctGlowEffect?.SetCorrect(inPlace);
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -174,11 +175,7 @@ public class NumberTile : MonoBehaviour,
 
         manager.NotifyPlayerInput();
         pointerDownScreenPos = eventData.position;
-
-        
     }
-
-   
 
     // ────────────────────────────────────────────────────────────────
     //  EventSystem — Drag (supressão de scroll pai, sem mover a peça)
@@ -202,15 +199,13 @@ public class NumberTile : MonoBehaviour,
 
     /// <summary>
     /// Ao soltar, calcula o delta desde o PointerDown e decide:
-    ///   - delta menor que SWIPE_THRESHOLD → clique.
-    ///   - delta maior ou igual              → swipe na direção dominante.
+    ///   - delta menor que swipeThreshold → clique.
+    ///   - delta maior ou igual           → swipe na direção dominante.
     /// </summary>
     public void OnPointerUp(PointerEventData eventData)
     {
         if (isAnimating) return;
         if (isEmpty && !isSelectableTarget) return;
-
-        
 
         Vector2 delta       = eventData.position - pointerDownScreenPos;
         float   deltaLength = delta.magnitude;
@@ -271,8 +266,6 @@ public class NumberTile : MonoBehaviour,
 
         scaleCoroutine = StartCoroutine(ScaleOverTime(transform.localScale, targetScale, duration));
     }
-
-
 
     // ────────────────────────────────────────────────────────────────
     //  Suporte ao gesto (privados)
@@ -337,7 +330,7 @@ public class NumberTile : MonoBehaviour,
     //  Utilitários públicos
     // ────────────────────────────────────────────────────────────────
 
-    public bool IsInCorrectPosition() => currentIndex == correctIndex;
+    public bool IsInCorrectPosition() => currentIndex == correctGridPosition;
 
     public void CheckIfJustReachedCorrectPosition()
     {
