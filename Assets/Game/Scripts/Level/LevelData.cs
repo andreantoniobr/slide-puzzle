@@ -18,7 +18,7 @@ public class LevelData : ScriptableObject
     public List<int> disabledCells = new List<int>();
 
     [Header("Espaços Vazios")]
-    [Range(1, 4)]
+    [Min(1)]
     public int emptyTileCount = 1;
 
     [Header("Modo")]
