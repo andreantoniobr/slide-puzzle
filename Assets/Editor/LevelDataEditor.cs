@@ -16,6 +16,9 @@ public class LevelDataEditor : Editor
     private int lastEmptyCount = -1;
     private int lastDisabledCellsHash = -1;
 
+    // Posição da peça aguardando escolha de destino (modo de seleção), ou -1 se nada pendente.
+    private int pendingSelectionPos = -1;
+
     public override void OnInspectorGUI()
     {
         LevelData data = (LevelData)target;
@@ -39,6 +42,7 @@ public class LevelDataEditor : Editor
         if (data.mode != LevelData.LevelMode.ArranjoPersonalizado)
         {
             positionToTile = null;
+            pendingSelectionPos = -1;
             EditorGUILayout.HelpBox("Mude o Mode para 'ArranjoPersonalizado' para editar o arranjo manualmente.", MessageType.Info);
             return;
         }
@@ -60,12 +64,15 @@ public class LevelDataEditor : Editor
             lastGridHeight = gridHeight;
             lastEmptyCount = emptyCount;
             lastDisabledCellsHash = disabledHash;
+            pendingSelectionPos = -1;
         }
 
         EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Editor Visual de Arranjo", EditorStyles.boldLabel);
         EditorGUILayout.HelpBox(
             "Clique numa peça adjacente a um espaço vazio (cinza) para movê-la, igual ao jogo real.\n" +
+            "Se a peça tiver mais de um vazio adjacente, ela fica selecionada (amarelo) e você escolhe " +
+            "o destino entre os vazios destacados (azul).\n" +
             "Isso garante que o arranjo final seja sempre resolvível.\n" +
             $"Células ativas: {totalActiveCells}. Espaços vazios: {emptyCount}.\n" +
             "Mudar o grid, os buracos, ou a quantidade de vazios reseta o arranjo visual.",
@@ -79,11 +86,13 @@ public class LevelDataEditor : Editor
             if (GUILayout.Button("Resetar (resolvido)"))
             {
                 ResetSolved(gridWidth, gridHeight, data.disabledCells);
+                pendingSelectionPos = -1;
                 SaveWorkingStateTo(data, gridWidth, gridHeight);
             }
             if (GUILayout.Button("Embaralhar aleatoriamente (válido)"))
             {
                 RandomShuffleValid(gridWidth, gridHeight, data.disabledCells, emptyCount, 120);
+                pendingSelectionPos = -1;
                 SaveWorkingStateTo(data, gridWidth, gridHeight);
             }
         }
@@ -262,6 +271,11 @@ public class LevelDataEditor : Editor
         float cellSize = Mathf.Min(40f, (EditorGUIUtility.currentViewWidth - 40f) / gridWidth);
         List<int> disabledCells = data.disabledCells;
 
+        // Se houver seleção pendente, calcula de antemão quais vazios são destino válido
+        List<int> pendingTargets = pendingSelectionPos != -1
+            ? FindAllAdjacentEmptyPositions(pendingSelectionPos, gridWidth, gridHeight, disabledCells, totalActiveCells, emptyCount)
+            : new List<int>();
+
         for (int r = 0; r < gridHeight; r++)
         {
             using (new EditorGUILayout.HorizontalScope())
@@ -273,7 +287,6 @@ public class LevelDataEditor : Editor
 
                     if (disabledCells != null && disabledCells.Contains(pos))
                     {
-                        // Buraco: espaço reservado, sem botão, pra manter alinhamento visual da grade
                         GUILayout.Space(cellSize + 2f);
                         continue;
                     }
@@ -281,20 +294,28 @@ public class LevelDataEditor : Editor
                     int tileId = positionToTile[pos];
                     bool isEmpty = IsEmptyTileId(tileId, totalActiveCells, emptyCount);
 
-                    int adjacentEmpty = isEmpty ? -1 : FindAdjacentEmptyPosition(pos, gridWidth, gridHeight, disabledCells, totalActiveCells, emptyCount);
-                    GUI.enabled = !isEmpty && adjacentEmpty != -1;
+                    List<int> adjacentEmpties = isEmpty
+                        ? null
+                        : FindAllAdjacentEmptyPositions(pos, gridWidth, gridHeight, disabledCells, totalActiveCells, emptyCount);
+
+                    bool isPendingTile = (pos == pendingSelectionPos);
+                    bool isSelectableTarget = isEmpty && pendingTargets.Contains(pos);
+
+                    GUI.enabled = isPendingTile
+                        || isSelectableTarget
+                        || (!isEmpty && adjacentEmpties != null && adjacentEmpties.Count > 0);
 
                     string label = isEmpty ? "" : (tileId + 1).ToString();
 
                     Color previousColor = GUI.backgroundColor;
                     if (isEmpty) GUI.backgroundColor = Color.gray;
+                    if (isSelectableTarget) GUI.backgroundColor = new Color(0.3f, 0.8f, 1f);
+                    if (isPendingTile) GUI.backgroundColor = new Color(1f, 0.85f, 0.2f);
 
                     if (GUILayout.Button(label, GUILayout.Width(cellSize), GUILayout.Height(cellSize)))
                     {
-                        (positionToTile[pos], positionToTile[adjacentEmpty]) =
-                            (positionToTile[adjacentEmpty], positionToTile[pos]);
-
-                        SaveWorkingStateTo(data, gridWidth, gridHeight);
+                        HandleArrangementClick(data, pos, isEmpty, isPendingTile, isSelectableTarget,
+                            adjacentEmpties, gridWidth, gridHeight);
                     }
 
                     GUI.backgroundColor = previousColor;
@@ -303,16 +324,68 @@ public class LevelDataEditor : Editor
                 GUILayout.FlexibleSpace();
             }
         }
+
+        if (pendingSelectionPos != -1)
+        {
+            EditorGUILayout.HelpBox(
+                "Peça selecionada — clique em um dos vazios destacados em azul para escolher o destino, " +
+                "ou clique na peça amarela de novo para cancelar.",
+                MessageType.None);
+        }
     }
 
-    private int FindAdjacentEmptyPosition(int pos, int gridWidth, int gridHeight, List<int> disabledCells, int totalActiveCells, int emptyCount)
+    private void HandleArrangementClick(LevelData data, int pos, bool isEmpty, bool isPendingTile,
+                                         bool isSelectableTarget, List<int> adjacentEmpties,
+                                         int gridWidth, int gridHeight)
     {
+        // Clicou na peça já selecionada — cancela a seleção
+        if (isPendingTile)
+        {
+            pendingSelectionPos = -1;
+            return;
+        }
+
+        // Clicou num vazio destacado como destino válido — confirma o movimento
+        if (isSelectableTarget)
+        {
+            (positionToTile[pos], positionToTile[pendingSelectionPos]) =
+                (positionToTile[pendingSelectionPos], positionToTile[pos]);
+
+            pendingSelectionPos = -1;
+            SaveWorkingStateTo(data, gridWidth, gridHeight);
+            return;
+        }
+
+        if (isEmpty) return; // clique em vazio não-selecionável, ignora
+
+        if (adjacentEmpties == null || adjacentEmpties.Count == 0) return;
+
+        if (adjacentEmpties.Count == 1)
+        {
+            // Só uma opção — move direto
+            (positionToTile[pos], positionToTile[adjacentEmpties[0]]) =
+                (positionToTile[adjacentEmpties[0]], positionToTile[pos]);
+
+            pendingSelectionPos = -1;
+            SaveWorkingStateTo(data, gridWidth, gridHeight);
+        }
+        else
+        {
+            // Múltiplas opções — entra em modo de seleção
+            pendingSelectionPos = pos;
+        }
+    }
+
+    private List<int> FindAllAdjacentEmptyPositions(int pos, int gridWidth, int gridHeight,
+                                                      List<int> disabledCells, int totalActiveCells, int emptyCount)
+    {
+        var result = new List<int>();
         foreach (int neighborPos in GetNeighbors(pos, gridWidth, gridHeight, disabledCells))
         {
             if (IsEmptyTileId(positionToTile[neighborPos], totalActiveCells, emptyCount))
-                return neighborPos;
+                result.Add(neighborPos);
         }
-        return -1;
+        return result;
     }
 
     private List<int> GetNeighbors(int pos, int gridWidth, int gridHeight, List<int> disabledCells)
@@ -320,10 +393,10 @@ public class LevelDataEditor : Editor
         var list = new List<int>();
         int r = pos / gridWidth, c = pos % gridWidth;
 
-        if (r > 0)              TryAdd(list, pos - gridWidth, disabledCells);
+        if (r > 0)               TryAdd(list, pos - gridWidth, disabledCells);
         if (r < gridHeight - 1)  TryAdd(list, pos + gridWidth, disabledCells);
-        if (c > 0)              TryAdd(list, pos - 1, disabledCells);
-        if (c < gridWidth - 1)  TryAdd(list, pos + 1, disabledCells);
+        if (c > 0)               TryAdd(list, pos - 1, disabledCells);
+        if (c < gridWidth - 1)   TryAdd(list, pos + 1, disabledCells);
 
         return list;
     }

@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_7 - 5x3 - 5 Vazios - 29 Movimentos
+  m_Name: Level_12 - 80 Movimentos
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
-  levelName: Level 2x3
-  gridWidth: 5
-  gridHeight: 3
-  disabledCells: 0000000001000000030000000400000005000000
-  emptyTileCount: 3
+  levelName: "N\xEDvel"
+  gridWidth: 7
+  gridHeight: 4
+  disabledCells: 1d0000001c000000150000000e000000160000001b000000140000001a000000170000000f0000000700000019000000130000000d000000
+  emptyTileCount: 2
   mode: 1
   shuffleMoves: 120
   seed: 12345
-  customArrangement: 0700000009000000060000000c0000000e0000000a00000002000000080000000b0000000d000000
+  customArrangement: 010000001800000005000000060000001100000004000000080000000b000000120000000a0000000200000003000000100000000c0000000900000000000000
   tutorialStage: {fileID: 0}
