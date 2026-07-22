@@ -391,6 +391,8 @@ GameObject:
   - component: {fileID: 966017593947336137}
   - component: {fileID: 8351591161435748351}
   - component: {fileID: 7975347222059919022}
+  - component: {fileID: 4372263705750202029}
+  - component: {fileID: 1222360982783406460}
   m_Layer: 5
   m_Name: NumberTilePrefab
   m_TagString: Untagged
@@ -448,6 +450,7 @@ MonoBehaviour:
   numberText: {fileID: 5432264214082607299}
   correctGlowEffect: {fileID: 5314018518069609022}
   correctIndex: 0
+  correctGridPosition: 0
   currentIndex: 0
   isEmpty: 0
   selectableEmptyColor: {r: 0.6217738, g: 0.9764151, b: 0.97499263, a: 0.050980393}
@@ -457,6 +460,47 @@ MonoBehaviour:
   TextTileCorrectColor: {r: 0.039215688, g: 0.1882353, b: 0.16470589, a: 1}
   invalidMoveShrinkFactor: 0.95
   invalidMoveDuration: 0.15
+--- !u!223 &4372263705750202029
+Canvas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092838294686666308}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_RenderMode: 2
+  m_Camera: {fileID: 0}
+  m_PlaneDistance: 100
+  m_PixelPerfect: 0
+  m_ReceivesEvents: 1
+  m_OverrideSorting: 0
+  m_OverridePixelPerfect: 0
+  m_SortingBucketNormalizedSize: 0
+  m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
+  m_AdditionalShaderChannelsFlag: 0
+  m_UpdateRectTransformForStandalone: 0
+  m_SortingLayerID: 0
+  m_SortingOrder: 0
+  m_TargetDisplay: 0
+--- !u!114 &1222360982783406460
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092838294686666308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.GraphicRaycaster
+  m_IgnoreReversedGraphics: 1
+  m_BlockingObjects: 0
+  m_BlockingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1001 &6643542512038060982
 PrefabInstance:
   m_ObjectHideFlags: 0

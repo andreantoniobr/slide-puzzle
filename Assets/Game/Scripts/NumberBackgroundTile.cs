@@ -8,19 +8,15 @@ using TMPro;
 /// </summary>
 public class NumberBackgroundTile : MonoBehaviour
 {
-    [SerializeField] private Image background;
     [SerializeField] private TMP_Text numberText;
 
-    public void Init(int number, Color textColor, Color backgroundColor)
+    public void Init(int number, Color textColor)
     {
         if (numberText != null)
             numberText.text = number.ToString();
 
         if (numberText != null)
             numberText.color = textColor;
-
-        if (background != null)
-            background.color = backgroundColor;
     }
 
     public void SetFontSize(int fontSize)
