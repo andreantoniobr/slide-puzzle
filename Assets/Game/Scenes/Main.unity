@@ -862,6 +862,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NumberPuzzleManager
   tilePrefab: {fileID: 4092838294686666308, guid: e55b6dc7fb962b34892a916f7a2d1a52, type: 3}
   boardPanel: {fileID: 340401676}
+  boardSizeController: {fileID: 1277041101}
   gridWidth: 4
   gridHeight: 4
   disabledCells: 
@@ -942,7 +943,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d792f611acf7fe458df3bbe069df200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelManager
-  levelDatabase: {fileID: 11400000, guid: dedaa68e467dc284da1ae3018c40f44d, type: 2}
+  levelDatabase: {fileID: 11400000, guid: 2f821e2439ce7824e95d327147dd0dd0, type: 2}
   puzzleManager: {fileID: 634331315}
   tutorialOverlay: {fileID: 1657637551}
 --- !u!4 &726740075
@@ -1027,7 +1028,7 @@ MonoBehaviour:
       m_Calls: []
   settings:
     gapOffset: 5
-    outerBorderThickness: 80
+    outerBorderThickness: 70
     convexCornerRadius: 24
     convexSegments: 12
     concaveCornerRadius: 24
@@ -1035,6 +1036,9 @@ MonoBehaviour:
     pointSpacing: 8
     collinearAngleThresholdDegrees: 0.5
     minSegmentLength: 0.01
+    innerHoleThickness: 70
+    innerHoleConvexCornerRadius: 0
+    innerHoleConcaveCornerRadius: 0
     tileWorldLength: 512
 --- !u!1 &850486108
 GameObject:
@@ -1192,6 +1196,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1277041100}
+  - component: {fileID: 1277041101}
   m_Layer: 5
   m_Name: Box
   m_TagString: Untagged
@@ -1222,6 +1227,23 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 900, y: 900}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1277041101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1277041099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37833c7e3ac4bb343b784f7280a922e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoardSizeController
+  boardPanel: {fileID: 340401676}
+  boardBackground: {fileID: 1606836136}
+  backgroundBoardPanel: {fileID: 2047370778}
+  boardFrame: {fileID: 836420758}
+  usePlatformCheck: 0
 --- !u!1 &1384852465
 GameObject:
   m_ObjectHideFlags: 0
@@ -2509,6 +2531,10 @@ PrefabInstance:
     - target: {fileID: 4597449830815037237, guid: ab5bd44ac14b16442827ec249939345a, type: 3}
       propertyPath: m_Name
       value: BoardBackground
+      objectReference: {fileID: 0}
+    - target: {fileID: 4597449830815037237, guid: ab5bd44ac14b16442827ec249939345a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7967596308409440615, guid: ab5bd44ac14b16442827ec249939345a, type: 3}
       propertyPath: m_Pivot.x

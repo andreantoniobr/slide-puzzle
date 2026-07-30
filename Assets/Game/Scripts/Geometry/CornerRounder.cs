@@ -28,11 +28,28 @@ namespace BoardFrame.Geometry
                 var t = tangents[i];
                 Vector2 curr = t.position;
 
-                // Desloca o vértice para fora (gap entre o tile e a moldura)
                 Vector2 bisector = (t.normalIn + t.normalOut);
                 if (bisector.sqrMagnitude < GeometryUtils.Epsilon) bisector = t.normalIn;
                 bisector.Normalize();
-                Vector2 offsetVertex = curr + bisector * settings.gapOffset;
+
+                // Correção de miter: mover na diagonal (bissetriz) por "gapOffset" não produz
+                // o mesmo recuo perpendicular que os lados retos têm — precisa dividir por
+                // cos(metade do ângulo entre as normais). Sem isso, cantos recuam MENOS que
+                // os lados, deixando a forma "torta"/encolhida de forma desigual — efeito
+                // que fica muito visível em buracos pequenos.
+                float angleBetweenNormals = GeometryUtils.AngleBetween(t.normalIn, t.normalOut);
+                float halfAngle = angleBetweenNormals * 0.5f;
+                float cosHalfAngle = Mathf.Cos(halfAngle);
+
+                // Miter limit: evita que o offset "dispare" para o infinito em ângulos quase
+                // 180° (cos próximo de 0) — limita a no máximo 4x a distância base.
+                const float miterLimit = 4f;
+                float miterMultiplier = cosHalfAngle > 0.05f
+                    ? Mathf.Min(1f / cosHalfAngle, miterLimit)
+                    : miterLimit;
+
+                float miterDistance = settings.gapOffset * miterMultiplier;
+                Vector2 offsetVertex = curr + bisector * miterDistance;
 
                 if (t.turnType == TurnType.Straight)
                 {
