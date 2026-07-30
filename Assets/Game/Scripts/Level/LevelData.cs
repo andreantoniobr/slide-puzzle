@@ -9,6 +9,17 @@ public class LevelData : ScriptableObject
     [Header("Identificação")]
     public string levelName = "Nível";
 
+    [Header("Tamanho do Tabuleiro na Tela")]
+    [Tooltip("Tamanho (largura x altura, em pixels de UI) do tabuleiro quando exibido em mobile/retrato.")]
+    public Vector2 boardSizeMobile = new Vector2(800, 800);
+
+    [Tooltip("Tamanho (largura x altura, em pixels de UI) do tabuleiro quando exibido em desktop/paisagem.")]
+    public Vector2 boardSizePC = new Vector2(800, 800);
+
+    [Header("Moldura (opcional)")]
+    [Tooltip("Espessura customizada da borda para este nível. Deixe 0 para usar o padrão configurado no BoardFrameMesh.")]
+    public float customBorderThickness = 0f;
+
     [Header("Tamanho")]
     public int gridWidth = 4;
     public int gridHeight = 4;
@@ -50,7 +61,10 @@ public class LevelData : ScriptableObject
             seed           = seed,
             customBoard    = null,
             emptyTileCount = emptyTileCount,
-            tutorialStage  = tutorialStage
+            tutorialStage  = tutorialStage,
+            boardSizeMobile = boardSizeMobile,
+            boardSizePC = boardSizePC,
+            customBorderThickness = customBorderThickness,
         };
 
         if (mode == LevelMode.ArranjoPersonalizado &&

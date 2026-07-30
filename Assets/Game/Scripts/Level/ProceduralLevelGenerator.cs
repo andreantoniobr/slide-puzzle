@@ -20,8 +20,6 @@ public static class ProceduralLevelGenerator
     {
         int gridSize = Mathf.Clamp(MinGridSize + proceduralIndex / 3, MinGridSize, MaxGridSize);
 
-        // Suaviza a transição: primeiros níveis procedurais ainda têm 2 vazios,
-        // depois cai pra 1 (padrão clássico) conforme o jogador avança
         int emptyTileCount = proceduralIndex < 6 ? 2 : 1;
 
         int shuffleMoves = gridSize <= 3
@@ -30,16 +28,22 @@ public static class ProceduralLevelGenerator
 
         int seed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
 
+        // NOVO: tamanho padrão para níveis procedurais — sem isso, boardSizeMobile/
+        // boardSizePC ficam (0,0) e o BoardSizeController zera o tabuleiro inteiro.
+        Vector2 defaultBoardSize = new Vector2(800f, 800f);
+
         return new LevelConfig
         {
             gridWidth      = gridSize,
             gridHeight     = gridSize,
-            disabledCells  = new List<int>(), // procedural nunca tem buracos
+            disabledCells  = new List<int>(),
             shuffleMoves   = shuffleMoves,
             seed           = seed,
             emptyTileCount = emptyTileCount,
             customBoard    = null,
-            tutorialStage  = null
+            tutorialStage  = null,
+            boardSizeMobile = defaultBoardSize, // NOVO
+            boardSizePC     = defaultBoardSize  // NOVO
         };
     }
 }

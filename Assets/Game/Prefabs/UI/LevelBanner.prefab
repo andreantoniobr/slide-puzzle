@@ -136,7 +136,7 @@ MonoBehaviour:
   slideInDuration: 0.35
   visibleDuration: 2
   slideOutDuration: 0.3
-  textFormat: "N\xEDvel {0}"
+  textFormat: Level {0}
 --- !u!225 &3242962050042257865
 CanvasGroup:
   m_ObjectHideFlags: 0
