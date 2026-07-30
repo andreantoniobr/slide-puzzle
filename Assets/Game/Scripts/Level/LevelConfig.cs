@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using UnityEngine;
 /// <summary>
 /// Contrato comum entre níveis feitos à mão e níveis procedurais.
 /// O NumberPuzzleManager só entende isso — não sabe de onde veio.
@@ -13,6 +13,10 @@ public class LevelConfig
     public List<int> disabledCells;
     public int shuffleMoves;
     public int seed;
+
+    public Vector2 boardSizeMobile;
+    public Vector2 boardSizePC;
+    public float customBorderThickness;
 
     public int emptyTileCount = 1;
 

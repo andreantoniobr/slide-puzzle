@@ -30,6 +30,16 @@ namespace BoardFrame.Data
         public float collinearAngleThresholdDegrees;
         public float minSegmentLength;
 
+        [Header("Borda Interna (ao redor de buracos cercados)")]
+        [Tooltip("Espessura da moldura desenhada ao redor de buracos totalmente internos.")]
+        public float innerHoleThickness;
+
+        [Tooltip("Raio dos cantos CONVEXOS da borda interna.")]
+        public float innerHoleConvexCornerRadius;
+
+        [Tooltip("Raio dos cantos CÔNCAVOS da borda interna (reentrâncias, se o buraco tiver formato em L).")]
+        public float innerHoleConcaveCornerRadius;
+
         [Header("Textura")]
         public float tileWorldLength;
 

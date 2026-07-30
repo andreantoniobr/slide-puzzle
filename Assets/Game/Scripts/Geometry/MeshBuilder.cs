@@ -40,7 +40,19 @@ namespace BoardFrame.Geometry
                 Vector2 normal = (normalIn + normalOut);
                 normal = normal.sqrMagnitude < GeometryUtils.Epsilon ? normalIn : normal.normalized;
 
-                outerPoints.Add(curr + normal * thickness);
+                // NOVO: correção de miter — sem isso, o lado externo recua MENOS que
+                // "thickness" nos cantos (efeito de canto "cortado"/arredondado
+                // mesmo com corner radius = 0). Mesma fórmula usada em CornerRounder.
+                float angleBetweenNormals = GeometryUtils.AngleBetween(normalIn, normalOut);
+                float halfAngle = angleBetweenNormals * 0.5f;
+                float cosHalfAngle = Mathf.Cos(halfAngle);
+
+                const float miterLimit = 4f;
+                float miterMultiplier = cosHalfAngle > 0.05f
+                    ? Mathf.Min(1f / cosHalfAngle, miterLimit)
+                    : miterLimit;
+
+                outerPoints.Add(curr + normal * thickness * miterMultiplier);
             }
 
             // UV contínuo: distância real acumulada ao longo do contorno interno

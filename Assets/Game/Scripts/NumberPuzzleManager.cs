@@ -11,6 +11,9 @@ public class NumberPuzzleManager : MonoBehaviour
     public GameObject    tilePrefab;
     public RectTransform boardPanel;
 
+    [Header("Tamanho do Tabuleiro")]
+    [SerializeField] private BoardSizeController boardSizeController;
+
     [Range(1, 8)]
     public int gridWidth = 4;
     [Range(1, 8)]
@@ -605,6 +608,9 @@ public class NumberPuzzleManager : MonoBehaviour
     /// <summary>Carrega um nível a partir de um LevelConfig (feito à mão ou procedural).</summary>
     public void LoadLevel(LevelConfig config)
     {
+        boardSizeController?.ApplySize(config.boardSizeMobile, config.boardSizePC);
+        boardFrameMesh?.ApplyCustomThickness(config.customBorderThickness);
+        
         gridWidth  = Mathf.Clamp(config.gridWidth,  1, 8);
         gridHeight = Mathf.Clamp(config.gridHeight, 1, 8);
 
