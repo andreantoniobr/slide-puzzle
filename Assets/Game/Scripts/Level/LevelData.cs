@@ -24,6 +24,10 @@ public class LevelData : ScriptableObject
     public int gridWidth = 4;
     public int gridHeight = 4;
 
+    [Header("Tiles Especiais (opcional)")]
+    [Tooltip("Tiles com mecânica diferente do padrão numérico. Deixe vazio para comportamento normal.")]
+    public List<SpecialTileData> specialTiles = new List<SpecialTileData>();
+
     [Header("Formato (buracos)")]
     [Tooltip("Posições do grid (0-based, row-major: row*gridWidth+col) que NÃO existem no tabuleiro.")]
     public List<int> disabledCells = new List<int>();
@@ -65,6 +69,7 @@ public class LevelData : ScriptableObject
             boardSizeMobile = boardSizeMobile,
             boardSizePC = boardSizePC,
             customBorderThickness = customBorderThickness,
+            specialTiles = specialTiles,
         };
 
         if (mode == LevelMode.ArranjoPersonalizado &&

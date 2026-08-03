@@ -53,7 +53,7 @@ public class NumberPuzzleManager : MonoBehaviour
     [SerializeField] private BoardFrameMesh boardFrameMesh;
 
     [Header("Fundo do Tabuleiro (caixa)")]
-    [SerializeField] private BoardBackgroundController boardBackgroundController;
+    [SerializeField] private BoardBackgroundController boardBackgroundController;   
 
     [Header("UI (opcional)")]
     public Text   movesText;
@@ -94,6 +94,9 @@ public class NumberPuzzleManager : MonoBehaviour
 
     // guarda a posição inicial de cada tile para permitir restart exato
     private int[] initialTileIndexes;
+
+    // configuração de tiles especiais do nível atual (opcional — null/vazio = comportamento padrão)
+    private List<SpecialTileData> currentSpecialTiles;
 
     private Dictionary<NumberTile, Coroutine> activeShakes =
         new Dictionary<NumberTile, Coroutine>();
@@ -216,8 +219,10 @@ public class NumberPuzzleManager : MonoBehaviour
 
         if (boardBackgroundController != null)
         {
-            boardBackgroundController.Build(activeCells, CellPosition, cellSize, gapSize); 
+            boardBackgroundController.Build(activeCells, CellPosition, cellSize, gapSize);
         }
+
+        ApplySpecialTiles(currentSpecialTiles);
 
         UpdateMovesUI();
     }
@@ -231,6 +236,52 @@ public class NumberPuzzleManager : MonoBehaviour
     }
 
     // ────────────────────────────────────────────────────────────────
+    //  Tiles Especiais
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Aplica a configuração de tiles especiais do nível atual (se houver)
+    /// aos tiles recém-criados. Sem configuração, todos os tiles permanecem
+    /// SpecialTileType.Normal — comportamento idêntico ao original.
+    /// </summary>
+    private void ApplySpecialTiles(List<SpecialTileData> specialTiles)
+    {
+        if (specialTiles == null) return;
+
+        foreach (var data in specialTiles)
+        {
+            if (data == null) continue;
+            if (data.tileId < 0 || data.tileId >= tiles.Length) continue;
+            tiles[data.tileId].ApplySpecialData(data);
+        }
+    }
+
+    /// <summary>
+    /// Depois de cada movimento, verifica se algum Cadeado ficou adjacente
+    /// a Chave(s) suficientes — se sim, ambos viram tiles Normal.
+    /// Adjacência é sempre ortogonal (nunca diagonal).
+    /// </summary>
+    private void ResolveLockKeyAdjacency()
+    {
+        foreach (NumberTile lockTile in tiles)
+        {
+            if (lockTile.specialType != SpecialTileType.Lock) continue;
+
+            foreach (int neighborPos in GetValidNeighbors(lockTile.currentIndex))
+            {
+                NumberTile neighbor = GetTileAtIndex(neighborPos);
+                if (neighbor != null && neighbor.specialType == SpecialTileType.Key)
+                {
+                    neighbor.ConvertToNormal();
+                    lockTile.ConsumeLockKey();
+
+                    if (lockTile.LockRemainingKeys <= 0) break;
+                }
+            }
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────
     //  Input — Clique
     // ────────────────────────────────────────────────────────────────
 
@@ -240,6 +291,20 @@ public class NumberPuzzleManager : MonoBehaviour
 
         if (pendingSelectionTile != null && pendingSelectionTile != tile)
             CancelTargetSelection();
+
+        // Tiles com toque especial (ex.: Rock rachando) consomem o toque aqui,
+        // sem entrar no fluxo normal de movimento.
+        if (tile.HandleSpecialTouch())
+            return true;
+
+        // Tiles bloqueados (Hole, Lock ainda trancado) nunca se movem — mostra
+        // os destaques de movimento normalmente, mas NUNCA reage a si mesma
+        // (sem tremer/animar), conforme especificado.
+        if (!tile.CanBeMoved)
+        {
+            ShowMovableHighlights();
+            return true;
+        }
 
         int tileIdx = tile.currentIndex;
         List<int> adjacentEmpties = FindAllAdjacentEmpty(tileIdx);
@@ -333,6 +398,14 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         if (isAnimating || puzzleSolved) return false;
 
+        // Tiles com toque especial (ex.: Rock rachando) consomem o toque aqui.
+        if (tile.HandleSpecialTouch())
+            return true;
+
+        // Tiles bloqueados nunca se movem e nunca reagem ao swipe.
+        if (!tile.CanBeMoved)
+            return true;
+
         int tileIdx = tile.currentIndex;
 
         foreach (int emptyPos in emptyIndexes)
@@ -421,7 +494,11 @@ public class NumberPuzzleManager : MonoBehaviour
                 int idx = rEmpty * gridWidth + c;
                 if (disabledCells.Contains(idx)) return null;
                 NumberTile t = GetTileAtIndex(idx);
-                if (t != null && !t.isEmpty) chain.Add(t);
+                if (t != null && !t.isEmpty)
+                {
+                    if (!t.CanBeMoved) return null; // bloco (Hole/Lock/Rock) no caminho — cadeia inválida
+                    chain.Add(t);
+                }
             }
             return chain;
         }
@@ -435,7 +512,11 @@ public class NumberPuzzleManager : MonoBehaviour
                 int idx = r * gridWidth + cEmpty;
                 if (disabledCells.Contains(idx)) return null;
                 NumberTile t = GetTileAtIndex(idx);
-                if (t != null && !t.isEmpty) chain.Add(t);
+                if (t != null && !t.isEmpty)
+                {
+                    if (!t.CanBeMoved) return null;
+                    chain.Add(t);
+                }
             }
             return chain;
         }
@@ -503,6 +584,8 @@ public class NumberPuzzleManager : MonoBehaviour
         }
         emptyTileFinal.Refresh();
 
+        ResolveLockKeyAdjacency();
+
         isAnimating = false;
 
         if (CheckWin()) OnPuzzleSolved();
@@ -555,6 +638,9 @@ public class NumberPuzzleManager : MonoBehaviour
         isAnimating = false;
 
         tile.CheckIfJustReachedCorrectPosition();
+
+        ResolveLockKeyAdjacency();
+
         if (CheckWin()) OnPuzzleSolved();
 
         onComplete?.Invoke();
@@ -610,13 +696,15 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         boardSizeController?.ApplySize(config.boardSizeMobile, config.boardSizePC);
         boardFrameMesh?.ApplyCustomThickness(config.customBorderThickness);
-        
+
         gridWidth  = Mathf.Clamp(config.gridWidth,  1, 8);
         gridHeight = Mathf.Clamp(config.gridHeight, 1, 8);
 
         disabledCells = config.disabledCells != null
             ? new List<int>(config.disabledCells)
             : new List<int>();
+
+        currentSpecialTiles = config.specialTiles; // opcional — null/vazio = comportamento padrão
 
         if (config.shuffleMoves > 0) shuffleMoves = config.shuffleMoves;
 
@@ -768,7 +856,7 @@ public class NumberPuzzleManager : MonoBehaviour
         foreach (int n in toHighlight)
         {
             NumberTile t = GetTileAtIndex(n);
-            if (t == null || t.isEmpty) continue;
+            if (t == null || !t.CanBeMoved) continue; // pula Hole/Lock/Rock — nunca destacados/tremem
             t.SetHighlight(true);
             StartShake(t);
         }
@@ -935,7 +1023,7 @@ public class NumberPuzzleManager : MonoBehaviour
             foreach (int n in GetValidNeighbors(emptyPos))
             {
                 NumberTile t = GetTileAtIndex(n);
-                if (t == null || t.isEmpty) continue;
+                if (t == null || t.isEmpty || !t.CanBeMoved) continue;
 
                 int correctGridPos = activeCells[t.correctIndex];
                 int distanceAfterMove = ManhattanDistance(emptyPos, correctGridPos);
@@ -966,7 +1054,7 @@ public class NumberPuzzleManager : MonoBehaviour
     {
         foreach (NumberTile tile in tiles)
         {
-            if (tile.isEmpty) continue;
+            if (tile.isEmpty || !tile.CanBeMoved) continue;
 
             List<int> adjacentEmpties = FindAllAdjacentEmpty(tile.currentIndex);
             if (adjacentEmpties.Count >= 2)

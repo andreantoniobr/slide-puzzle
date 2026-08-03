@@ -22,6 +22,10 @@ using System;
 ///
 /// IDragHandler é implementado unicamente para suprimir o scroll do ScrollRect pai
 /// e garantir que o EventSystem entregue o PointerUp corretamente após o arraste.
+///
+/// Tiles especiais (Hole, Rock, Question, Lock, Key): controlados por
+/// SpecialTileType. Por padrão todo tile é Normal — comportamento idêntico
+/// ao que já existia, garantindo compatibilidade com níveis já criados.
 /// </summary>
 public class NumberTile : MonoBehaviour,
     IPointerDownHandler,
@@ -78,10 +82,36 @@ public class NumberTile : MonoBehaviour,
     [SerializeField] private float invalidMoveDuration = 0.15f;
 
     // ────────────────────────────────────────────────────────────────
+    //  Tiles Especiais
+    // ────────────────────────────────────────────────────────────────
+
+    [Header("Tipo Especial")]
+    public SpecialTileType specialType = SpecialTileType.Normal;
+
+    [Header("Sprites Especiais (opcional — só usados conforme o tipo)")]
+    [SerializeField] private Image specialSpriteImage; // overlay separado, oculto por padrão
+    [SerializeField] private Sprite holeSprite;
+    [SerializeField] private Sprite rockCrackedSprite;     // estado após o 1º toque (mais rachada)
+    [SerializeField] private Sprite rockCrackedLessSprite; // estado inicial (menos rachada)
+    [SerializeField] private Sprite questionSprite;
+    [SerializeField] private Sprite lockSprite;
+    [SerializeField] private Sprite keySprite;
+
+    [Header("Efeitos Especiais")]
+    [SerializeField] private ParticleSystem rockBreakParticles;
+
+    private int rockHitsRemaining;
+    private int lockKeysRemaining;
+
+    // ────────────────────────────────────────────────────────────────
     //  Eventos públicos
     // ────────────────────────────────────────────────────────────────
 
     public static event Action TileCorrectPositionEvent;
+    public static event Action QuestionRevealedEvent;
+    public static event Action RockCrackEvent;   // NOVO — pedra rachou (ainda não quebrou de vez)
+    public static event Action RockBreakEvent;   // NOVO — pedra quebrou de vez (virou Normal)
+    public static event Action LockOpenEvent; 
 
     // ────────────────────────────────────────────────────────────────
     //  Estado privado
@@ -99,6 +129,7 @@ public class NumberTile : MonoBehaviour,
 
     private Coroutine scaleCoroutine;
     private Vector3 baseScale = Vector3.one;
+    private bool wasQuestionRevealed;
 
     // ────────────────────────────────────────────────────────────────
     //  Unity lifecycle
@@ -124,8 +155,29 @@ public class NumberTile : MonoBehaviour,
         correctGridPosition = current; // no Init, a peça sempre nasce na posição correta dela
         currentIndex        = current;
         isEmpty             = empty;
+        specialType         = SpecialTileType.Normal; // reset — evita "vazar" tipo especial de reaproveitamento de instância
 
         if (highlightOverlay != null) highlightOverlay.color = Color.clear;
+
+        Refresh();
+    }
+
+    /// <summary>
+    /// Aplica a configuração de um tile especial (chamado pelo Manager logo
+    /// após BuildBoard, se o nível tiver algum SpecialTileData configurado
+    /// para o tileId desta peça). Se nunca for chamado, o tile permanece
+    /// SpecialTileType.Normal — comportamento padrão inalterado.
+    /// </summary>
+    public void ApplySpecialData(SpecialTileData data)
+    {
+        specialType = data.type;
+        rockHitsRemaining = data.rockHitsRequired;
+        lockKeysRemaining = data.lockRequiredKeys;
+
+        // Pré-registra o estado atual como baseline, para que o Refresh() abaixo
+        // NÃO trate "já estar na posição correta agora" como uma transição real —
+        // isso é chamado antes do embaralhamento, é só o estado de fábrica.
+        wasQuestionRevealed = (specialType == SpecialTileType.Question) && IsInCorrectPosition();
 
         Refresh();
     }
@@ -142,14 +194,42 @@ public class NumberTile : MonoBehaviour,
             if (background       != null) background.color       = new Color(0f, 0f, 0f, 0f);
             if (numberText       != null) numberText.text        = "";
             if (highlightOverlay != null) highlightOverlay.color = Color.clear;
+            if (specialSpriteImage != null) specialSpriteImage.gameObject.SetActive(false);
             correctGlowEffect?.SetCorrect(false);
             return;
         }
 
+        bool inPlace = IsInCorrectPosition();
+
+        if (specialType == SpecialTileType.Question)
+        {
+            bool isRevealedNow = inPlace;
+            if (isRevealedNow && !wasQuestionRevealed)
+                QuestionRevealedEvent?.Invoke();
+            wasQuestionRevealed = isRevealedNow;
+        }
+
+        // Tiles especiais com visual próprio assumem o lugar do número —
+        // Question mostra o número real quando já está na posição correta.
+        Sprite specialSprite = GetSpecialSpriteOrNull(inPlace);
+        if (specialSprite != null)
+        {
+            if (specialSpriteImage != null)
+            {
+                specialSpriteImage.sprite = specialSprite;
+                specialSpriteImage.gameObject.SetActive(true);
+            }
+            if (numberText != null) numberText.gameObject.SetActive(false);
+            if (background != null) background.color = TileColor;
+            correctGlowEffect?.SetCorrect(false);
+            return;
+        }
+
+        if (specialSpriteImage != null) specialSpriteImage.gameObject.SetActive(false);
+        if (numberText != null) numberText.gameObject.SetActive(true);
+
         int number = correctIndex + 1; // 1-based para o jogador
         if (numberText != null) numberText.text = number.ToString();
-
-        bool inPlace = IsInCorrectPosition();
 
         if (background != null)
             background.color = inPlace ? TileCorrectColor : TileColor;
@@ -158,6 +238,92 @@ public class NumberTile : MonoBehaviour,
             numberText.color = inPlace ? TextTileCorrectColor : TextTileColor;
 
         correctGlowEffect?.SetCorrect(inPlace);
+    }
+
+    private Sprite GetSpecialSpriteOrNull(bool inPlace)
+    {
+        switch (specialType)
+        {
+            case SpecialTileType.Hole:  return holeSprite;
+            case SpecialTileType.Rock:  return rockHitsRemaining >= 2 ? rockCrackedLessSprite : rockCrackedSprite;
+            case SpecialTileType.Lock:  return lockSprite;
+            case SpecialTileType.Key:   return keySprite;
+            case SpecialTileType.Question: return inPlace ? null : questionSprite; // correto = revela o número real
+            default: return null;
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Gating de movimento (tiles especiais)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>Se este tile pode participar de um movimento agora.</summary>
+    public bool CanBeMoved
+    {
+        get
+        {
+            if (isEmpty) return false;
+            return specialType == SpecialTileType.Normal
+                || specialType == SpecialTileType.Question
+                || specialType == SpecialTileType.Key;
+        }
+    }
+
+    /// <summary>
+    /// Chamado pelo Manager ANTES de decidir movimento — dá a chance de um
+    /// tile especial "consumir" o toque (ex.: Rock rachando) em vez de mover.
+    /// Retorna true se o toque foi tratado aqui (o fluxo normal de movimento
+    /// não deve prosseguir).
+    /// </summary>
+    public bool HandleSpecialTouch()
+    {
+        if (specialType == SpecialTileType.Rock)
+        {
+            ApplyRockHit();
+            return true;
+        }
+        return false;
+    }
+
+    private void ApplyRockHit()
+    {
+        rockHitsRemaining--;
+
+        if (rockBreakParticles != null) rockBreakParticles.Play();
+
+        if (rockHitsRemaining <= 0)
+        {
+            specialType = SpecialTileType.Normal;
+            RockBreakEvent?.Invoke(); // NOVO
+        }
+        else
+        {
+            RockCrackEvent?.Invoke(); // NOVO
+        }
+
+        PlayInvalidMoveFeedback();
+        Refresh();
+    }
+
+    /// <summary>Converte este tile diretamente para Normal (usado por Lock/Key ao destravar).</summary>
+    public void ConvertToNormal()
+    {
+        specialType = SpecialTileType.Normal;
+        Refresh();
+    }
+
+    public int LockRemainingKeys => lockKeysRemaining;
+
+    /// <summary>Consome uma chave — se chegar a zero, o cadeado vira Normal.</summary>
+    public void ConsumeLockKey()
+    {
+        lockKeysRemaining--;
+        if (lockKeysRemaining <= 0)
+        {
+            specialType = SpecialTileType.Normal;
+            LockOpenEvent?.Invoke();
+        }
+        Refresh();
     }
 
     // ────────────────────────────────────────────────────────────────

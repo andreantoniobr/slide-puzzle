@@ -7,11 +7,17 @@ public class SFXController : AudioMain
     [SerializeField] private AudioClip correctTileSound;
     [SerializeField] private AudioClip highlightShownSound;
     [SerializeField] private AudioClip victorySound;
-    
+
+    [Header("Tiles Especiais")]
+    [SerializeField] private AudioClip rockCrackSound;
+    [SerializeField] private AudioClip rockBreakSound;
+    [SerializeField] private AudioClip lockOpenSound;
+    [SerializeField] private AudioClip questionRevealedSound;
+
     private void Awake()
-    {        
+    {
         SubscribeInEvents();
-    } 
+    }
 
     private void OnDestroy()
     {
@@ -24,7 +30,12 @@ public class SFXController : AudioMain
         NumberPuzzleManager.HighlightShownEvent += OnHighlightShown;
         NumberTile.TileCorrectPositionEvent += OnTileCorrectPosition;
         NumberPuzzleManager.SolvedPuzzleEvent += OnSolvedPuzzle;
-    }    
+
+        NumberTile.RockCrackEvent += OnRockCrack;
+        NumberTile.RockBreakEvent += OnRockBreak;
+        NumberTile.LockOpenEvent += OnLockOpen;
+        NumberTile.QuestionRevealedEvent += OnQuestionRevealed;
+    }
 
     private void UnsubscribeInEvents()
     {
@@ -32,6 +43,11 @@ public class SFXController : AudioMain
         NumberPuzzleManager.HighlightShownEvent -= OnHighlightShown;
         NumberTile.TileCorrectPositionEvent -= OnTileCorrectPosition;
         NumberPuzzleManager.SolvedPuzzleEvent -= OnSolvedPuzzle;
+
+        NumberTile.RockCrackEvent -= OnRockCrack;
+        NumberTile.RockBreakEvent -= OnRockBreak;
+        NumberTile.LockOpenEvent -= OnLockOpen;
+        NumberTile.QuestionRevealedEvent -= OnQuestionRevealed;
     }
 
     private void OnSlidedTile()
@@ -52,5 +68,25 @@ public class SFXController : AudioMain
     private void OnSolvedPuzzle(int time, int movements)
     {
         PlayAudio(victorySound);
+    }
+
+    private void OnRockCrack()
+    {
+        PlayAudio(rockCrackSound);
+    }
+
+    private void OnRockBreak()
+    {
+        PlayAudio(rockBreakSound);
+    }
+
+    private void OnLockOpen()
+    {
+        PlayAudio(lockOpenSound);
+    }
+    
+    private void OnQuestionRevealed()
+    {
+        PlayAudio(questionRevealedSound);
     }
 }

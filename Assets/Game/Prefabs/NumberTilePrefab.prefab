@@ -1,5 +1,80 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &877506614795114312
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5871742301193277057}
+  - component: {fileID: 2381831552040719138}
+  - component: {fileID: 6865880398770746844}
+  m_Layer: 5
+  m_Name: SpecialSpriteImage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &5871742301193277057
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877506614795114312}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 966017593947336137}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &2381831552040719138
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877506614795114312}
+  m_CullTransparentMesh: 1
+--- !u!114 &6865880398770746844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877506614795114312}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &1043195525696480378
 GameObject:
   m_ObjectHideFlags: 0
@@ -203,7 +278,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 6165875374574306269, guid: 64e08bc8a7551fe4f97484cd043f96d9, type: 3}
+  m_Sprite: {fileID: 3564628118954655410, guid: 63fa9fbcb67386b4b9fb52eab5ad64e7, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -416,6 +491,7 @@ RectTransform:
   - {fileID: 404483768731053278}
   - {fileID: 3982049470564505902}
   - {fileID: 3124271653438555543}
+  - {fileID: 5871742301193277057}
   - {fileID: 6871052325284641351}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -460,6 +536,15 @@ MonoBehaviour:
   TextTileCorrectColor: {r: 0.039215688, g: 0.1882353, b: 0.16470589, a: 1}
   invalidMoveShrinkFactor: 0.95
   invalidMoveDuration: 0.15
+  specialType: 0
+  specialSpriteImage: {fileID: 6865880398770746844}
+  holeSprite: {fileID: -1651551494736424504, guid: 5c66604c40d4db54f991d9accf46b7af, type: 3}
+  rockCrackedSprite: {fileID: 1121140136259666329, guid: a647fd8b9524aeb4c93c1963b0912326, type: 3}
+  rockCrackedLessSprite: {fileID: -8357186539457458429, guid: fbbe0991f1509c54d9e124e0cb9e8a48, type: 3}
+  questionSprite: {fileID: 6556385623988359242, guid: b2cde1429d229e743abb31eb2358c0f0, type: 3}
+  lockSprite: {fileID: -5688631246342423852, guid: 19583a745bdc06943865705870cd0f8a, type: 3}
+  keySprite: {fileID: -9116393956370283040, guid: 7c06932a16256b74bae1476e92a23c4b, type: 3}
+  rockBreakParticles: {fileID: 0}
 --- !u!223 &4372263705750202029
 Canvas:
   m_ObjectHideFlags: 0
@@ -479,7 +564,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
