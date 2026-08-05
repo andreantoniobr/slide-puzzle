@@ -100,6 +100,9 @@ public class NumberTile : MonoBehaviour,
     [Header("Efeitos Especiais")]
     [SerializeField] private ParticleSystem rockBreakParticles;
 
+    [SerializeField] private ParticleSystem lockOpenParticlesA; 
+    [SerializeField] private ParticleSystem lockOpenParticlesB;
+
     private int rockHitsRemaining;
     private int lockKeysRemaining;
 
@@ -220,7 +223,13 @@ public class NumberTile : MonoBehaviour,
                 specialSpriteImage.gameObject.SetActive(true);
             }
             if (numberText != null) numberText.gameObject.SetActive(false);
-            if (background != null) background.color = TileColor;
+
+            // Hole esconde o background completamente (nunca sai do lugar, então não
+            // precisa da moldura/cor de fundo normal). Os outros tipos especiais
+            // (Rock, Lock, Key, Question) continuam mostrando o background normal.
+            if (background != null)
+                background.gameObject.SetActive(specialType != SpecialTileType.Hole);
+
             correctGlowEffect?.SetCorrect(false);
             return;
         }
@@ -321,6 +330,8 @@ public class NumberTile : MonoBehaviour,
         if (lockKeysRemaining <= 0)
         {
             specialType = SpecialTileType.Normal;
+            if (lockOpenParticlesA != null) lockOpenParticlesA.Play(); 
+            if (lockOpenParticlesB != null) lockOpenParticlesB.Play();
             LockOpenEvent?.Invoke();
         }
         Refresh();

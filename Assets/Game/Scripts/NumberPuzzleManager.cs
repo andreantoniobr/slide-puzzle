@@ -101,6 +101,8 @@ public class NumberPuzzleManager : MonoBehaviour
     private Dictionary<NumberTile, Coroutine> activeShakes =
         new Dictionary<NumberTile, Coroutine>();
 
+    private HashSet<int> currentHoleTileIds;
+
     // ────────────────────────────────────────────────────────────────
     //  Unity
     // ────────────────────────────────────────────────────────────────
@@ -162,6 +164,20 @@ public class NumberPuzzleManager : MonoBehaviour
             gridPosToCorrectTileId[activeCells[tileId]] = tileId;
     }
 
+    private HashSet<int> ComputeHoleTileIds(List<SpecialTileData> specialTiles)
+    {
+        var result = new HashSet<int>();
+        if (specialTiles == null) return result;
+
+        foreach (var data in specialTiles)
+        {
+            if (data != null && data.type == SpecialTileType.Hole)
+                result.Add(data.tileId);
+        }
+
+        return result;
+    }
+
     public void BuildBoard()
     {
         ClearBoard();
@@ -178,11 +194,13 @@ public class NumberPuzzleManager : MonoBehaviour
         int fontSize = Mathf.Clamp(Mathf.RoundToInt(cellSize * fontSizePercent), minFontSize, maxFontSize);
         int firstEmptyId = totalActiveCells - emptyTileCount;
 
+        currentHoleTileIds = ComputeHoleTileIds(currentSpecialTiles); // NOVO
+
         if (backgroundController != null)
         {
             backgroundController.SetVisible(showBackgroundNumbers);
             if (showBackgroundNumbers)
-                backgroundController.Build(firstEmptyId, activeCells, CellPosition, cellSize, fontSize);
+                backgroundController.Build(firstEmptyId, activeCells, CellPosition, cellSize, fontSize, currentHoleTileIds); // NOVO — último parâmetro
         }
 
         for (int tileId = 0; tileId < totalActiveCells; tileId++)
@@ -302,6 +320,7 @@ public class NumberPuzzleManager : MonoBehaviour
         // (sem tremer/animar), conforme especificado.
         if (!tile.CanBeMoved)
         {
+            tile.PlayInvalidMoveFeedback();
             ShowMovableHighlights();
             return true;
         }
@@ -404,7 +423,10 @@ public class NumberPuzzleManager : MonoBehaviour
 
         // Tiles bloqueados nunca se movem e nunca reagem ao swipe.
         if (!tile.CanBeMoved)
+        {
+            tile.PlayInvalidMoveFeedback();
             return true;
+        }
 
         int tileIdx = tile.currentIndex;
 

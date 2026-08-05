@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 92d29afbbd75f1348bd3850b37cf6870, type: 3}
-  m_Name: LevelDatabaseTest3
+  m_Name: LevelDatabaseTest4
   m_EditorClassIdentifier: Assembly-CSharp::LevelDatabase
   levels:
   - {fileID: 11400000, guid: 7e289498e1cf2f14c9510344da439321, type: 2}
@@ -33,3 +33,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 994f3f8e40ad14b46a013e4108cd843a, type: 2}
   - {fileID: 11400000, guid: eaccd5b8fa8a5cd4393b8cee24bd9f98, type: 2}
   - {fileID: 11400000, guid: 0fa3dd1f29d65b84fa82273bfcb25293, type: 2}
+  - {fileID: 11400000, guid: fec1b389c8fefdf408b2f460a29510fc, type: 2}
+  - {fileID: 11400000, guid: e3405b2a34b8904479ab435720fe87a8, type: 2}
+  - {fileID: 11400000, guid: 445572fecff08464a88ba33cc097457c, type: 2}
+  - {fileID: 11400000, guid: 2d1b61371e4e6134a820c32ef07a6d73, type: 2}
+  - {fileID: 11400000, guid: 2c1441a8f33a3604fb846bbe0684e5c3, type: 2}
