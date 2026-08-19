@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD:Assets/Game/Sounds/AudioMixer.meta
 guid: 206ec54eb944d30489a151b0b4290cf3
+=======
+guid: 8c61bbed5ba6a774f85dbbd28540e61e
+>>>>>>> main:Assets/Game/Data/LevelDataTest4.meta
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}

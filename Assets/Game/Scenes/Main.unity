@@ -665,6 +665,10 @@ MonoBehaviour:
   correctTileSound: {fileID: 8300000, guid: d60e9388e39ce484d842894f1c8770a3, type: 3}
   highlightShownSound: {fileID: 8300000, guid: a05971e01469d65469bc384502415907, type: 3}
   victorySound: {fileID: 8300000, guid: ff0e8c6302156fe4f9ec360f875366ce, type: 3}
+  rockCrackSound: {fileID: 8300000, guid: e7ce5f82b0a20784bbca055b5a7726e7, type: 3}
+  rockBreakSound: {fileID: 8300000, guid: 3442143bd7958c84388e66a34f95c627, type: 3}
+  lockOpenSound: {fileID: 8300000, guid: 7debdc4a057c863429e5f3eeb8fa6c15, type: 3}
+  questionRevealedSound: {fileID: 8300000, guid: 8b6be465080da92489973552a93e7008, type: 3}
 --- !u!82 &539634368
 AudioSource:
   m_ObjectHideFlags: 0
@@ -943,7 +947,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d792f611acf7fe458df3bbe069df200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelManager
-  levelDatabase: {fileID: 11400000, guid: 2f821e2439ce7824e95d327147dd0dd0, type: 2}
+  levelDatabase: {fileID: 11400000, guid: 36bd41b650631394d8ebefd0c723148f, type: 2}
   puzzleManager: {fileID: 634331315}
   tutorialOverlay: {fileID: 1657637551}
 --- !u!4 &726740075

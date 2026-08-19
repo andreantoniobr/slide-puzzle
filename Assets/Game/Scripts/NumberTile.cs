@@ -22,6 +22,10 @@ using System;
 ///
 /// IDragHandler é implementado unicamente para suprimir o scroll do ScrollRect pai
 /// e garantir que o EventSystem entregue o PointerUp corretamente após o arraste.
+///
+/// Tiles especiais (Hole, Rock, Question, Lock, Key): controlados por
+/// SpecialTileType. Por padrão todo tile é Normal — comportamento idêntico
+/// ao que já existia, garantindo compatibilidade com níveis já criados.
 /// </summary>
 public class NumberTile : MonoBehaviour,
     IPointerDownHandler,
@@ -47,6 +51,13 @@ public class NumberTile : MonoBehaviour,
     public Image    background;
     public Image    highlightOverlay;
     public TMP_Text numberText;
+
+    [Header("Exibição de Informação Especial (genérico)")]
+    [SerializeField] private GameObject specialInfoDisplayPrefab; // prefab, instanciado só quando necessário
+    [SerializeField, Range(0f, 1f)] private float specialInfoOverflowRatio = 0.3f;
+    [SerializeField, Range(0.1f, 1f)] private float specialInfoSizeRatio = 0.4f;
+
+    private SpecialInfoDisplay specialInfoInstance;
 
     [Header("Glow de Posição Correta")]
     [SerializeField] private TileCorrectGlowEffect correctGlowEffect;
@@ -78,10 +89,41 @@ public class NumberTile : MonoBehaviour,
     [SerializeField] private float invalidMoveDuration = 0.15f;
 
     // ────────────────────────────────────────────────────────────────
+    //  Tiles Especiais
+    // ────────────────────────────────────────────────────────────────
+
+    [Header("Tipo Especial")]
+    public SpecialTileType specialType = SpecialTileType.Normal;
+
+    [Header("Sprites Especiais (opcional — só usados conforme o tipo)")]
+    [SerializeField] private Image specialSpriteImage; // overlay separado, oculto por padrão
+    [SerializeField] private Sprite holeSprite;
+    [SerializeField] private Sprite rockCrackedSprite;     // estado após o 1º toque (mais rachada)
+    [SerializeField] private Sprite rockCrackedLessSprite; // estado inicial (menos rachada)
+    [SerializeField] private Sprite questionSprite;
+    [SerializeField] private Sprite lockSprite;
+    [SerializeField] private Sprite keySprite;
+
+    [Header("Efeitos Especiais")]
+    [SerializeField] private ParticleSystem rockBreakParticles;
+
+    [SerializeField] private ParticleSystem lockOpenParticlesA; 
+    [SerializeField] private ParticleSystem lockOpenParticlesB;
+
+    private int rockHitsRemaining;
+    private int lockRequiredKeys; // total necessário — fixo durante o nível, não decrementa mais individualmente
+
+    public int LockRequiredKeys => lockRequiredKeys;
+
+    // ────────────────────────────────────────────────────────────────
     //  Eventos públicos
     // ────────────────────────────────────────────────────────────────
 
     public static event Action TileCorrectPositionEvent;
+    public static event Action QuestionRevealedEvent;
+    public static event Action RockCrackEvent;   // NOVO — pedra rachou (ainda não quebrou de vez)
+    public static event Action RockBreakEvent;   // NOVO — pedra quebrou de vez (virou Normal)
+    public static event Action LockOpenEvent; 
 
     // ────────────────────────────────────────────────────────────────
     //  Estado privado
@@ -99,6 +141,7 @@ public class NumberTile : MonoBehaviour,
 
     private Coroutine scaleCoroutine;
     private Vector3 baseScale = Vector3.one;
+    private bool wasQuestionRevealed;
 
     // ────────────────────────────────────────────────────────────────
     //  Unity lifecycle
@@ -124,8 +167,28 @@ public class NumberTile : MonoBehaviour,
         correctGridPosition = current; // no Init, a peça sempre nasce na posição correta dela
         currentIndex        = current;
         isEmpty             = empty;
+        specialType         = SpecialTileType.Normal; // reset — evita "vazar" tipo especial de reaproveitamento de instância
 
         if (highlightOverlay != null) highlightOverlay.color = Color.clear;
+
+        Refresh();
+    }
+
+    /// <summary>
+    /// Aplica a configuração de um tile especial (chamado pelo Manager logo
+    /// após BuildBoard, se o nível tiver algum SpecialTileData configurado
+    /// para o tileId desta peça). Se nunca for chamado, o tile permanece
+    /// SpecialTileType.Normal — comportamento padrão inalterado.
+    /// </summary>
+    public void ApplySpecialData(SpecialTileData data)
+    {
+        specialType = data.type;
+        rockHitsRemaining = data.rockHitsRequired;
+        lockRequiredKeys = data.lockRequiredKeys; // NOVO nome
+
+        wasQuestionRevealed = (specialType == SpecialTileType.Question) && IsInCorrectPosition();
+
+        HideSpecialInfo(); // NOVO — começa escondido, o Manager decide quando mostrar
 
         Refresh();
     }
@@ -142,14 +205,48 @@ public class NumberTile : MonoBehaviour,
             if (background       != null) background.color       = new Color(0f, 0f, 0f, 0f);
             if (numberText       != null) numberText.text        = "";
             if (highlightOverlay != null) highlightOverlay.color = Color.clear;
+            if (specialSpriteImage != null) specialSpriteImage.gameObject.SetActive(false);
             correctGlowEffect?.SetCorrect(false);
             return;
         }
 
+        bool inPlace = IsInCorrectPosition();
+
+        if (specialType == SpecialTileType.Question)
+        {
+            bool isRevealedNow = inPlace;
+            if (isRevealedNow && !wasQuestionRevealed)
+                QuestionRevealedEvent?.Invoke();
+            wasQuestionRevealed = isRevealedNow;
+        }
+
+        // Tiles especiais com visual próprio assumem o lugar do número —
+        // Question mostra o número real quando já está na posição correta.
+        Sprite specialSprite = GetSpecialSpriteOrNull(inPlace);
+        if (specialSprite != null)
+        {
+            if (specialSpriteImage != null)
+            {
+                specialSpriteImage.sprite = specialSprite;
+                specialSpriteImage.gameObject.SetActive(true);
+            }
+            if (numberText != null) numberText.gameObject.SetActive(false);
+
+            // Hole esconde o background completamente (nunca sai do lugar, então não
+            // precisa da moldura/cor de fundo normal). Os outros tipos especiais
+            // (Rock, Lock, Key, Question) continuam mostrando o background normal.
+            if (background != null)
+                background.gameObject.SetActive(specialType != SpecialTileType.Hole);
+
+            correctGlowEffect?.SetCorrect(false);
+            return;
+        }
+
+        if (specialSpriteImage != null) specialSpriteImage.gameObject.SetActive(false);
+        if (numberText != null) numberText.gameObject.SetActive(true);
+
         int number = correctIndex + 1; // 1-based para o jogador
         if (numberText != null) numberText.text = number.ToString();
-
-        bool inPlace = IsInCorrectPosition();
 
         if (background != null)
             background.color = inPlace ? TileCorrectColor : TileColor;
@@ -158,6 +255,91 @@ public class NumberTile : MonoBehaviour,
             numberText.color = inPlace ? TextTileCorrectColor : TextTileColor;
 
         correctGlowEffect?.SetCorrect(inPlace);
+    }
+
+    private Sprite GetSpecialSpriteOrNull(bool inPlace)
+    {
+        switch (specialType)
+        {
+            case SpecialTileType.Hole:  return holeSprite;
+            case SpecialTileType.Rock:  return rockHitsRemaining >= 2 ? rockCrackedLessSprite : rockCrackedSprite;
+            case SpecialTileType.Lock:  return lockSprite;
+            case SpecialTileType.Key:   return keySprite;
+            case SpecialTileType.Question: return inPlace ? null : questionSprite; // correto = revela o número real
+            default: return null;
+        }
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    //  Gating de movimento (tiles especiais)
+    // ────────────────────────────────────────────────────────────────
+
+    /// <summary>Se este tile pode participar de um movimento agora.</summary>
+    public bool CanBeMoved
+    {
+        get
+        {
+            if (isEmpty) return false;
+            return specialType == SpecialTileType.Normal
+                || specialType == SpecialTileType.Question
+                || specialType == SpecialTileType.Key;
+        }
+    }
+
+    /// <summary>
+    /// Chamado pelo Manager ANTES de decidir movimento — dá a chance de um
+    /// tile especial "consumir" o toque (ex.: Rock rachando) em vez de mover.
+    /// Retorna true se o toque foi tratado aqui (o fluxo normal de movimento
+    /// não deve prosseguir).
+    /// </summary>
+    public bool HandleSpecialTouch()
+    {
+        if (specialType == SpecialTileType.Rock)
+        {
+            ApplyRockHit();
+            return true;
+        }
+        return false;
+    }
+
+    private void ApplyRockHit()
+    {
+        rockHitsRemaining--;
+
+        if (rockBreakParticles != null) rockBreakParticles.Play();
+
+        if (rockHitsRemaining <= 0)
+        {
+            specialType = SpecialTileType.Normal;
+            RockBreakEvent?.Invoke(); // NOVO
+        }
+        else
+        {
+            RockCrackEvent?.Invoke(); // NOVO
+        }
+
+        PlayInvalidMoveFeedback();
+        Refresh();
+    }
+
+    /// <summary>Converte este tile diretamente para Normal (usado por Lock/Key ao destravar).</summary>
+    public void ConvertToNormal()
+    {
+        specialType = SpecialTileType.Normal;
+        Refresh();
+    }   
+
+    
+    public void OpenLock()
+    {
+        specialType = SpecialTileType.Normal;
+
+        if (lockOpenParticlesA != null) lockOpenParticlesA.Play();
+        if (lockOpenParticlesB != null) lockOpenParticlesB.Play();
+
+        HideSpecialInfo();
+        LockOpenEvent?.Invoke();
+        Refresh();
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -354,5 +536,45 @@ public class NumberTile : MonoBehaviour,
         {
             background.color = originalBackgroundColor;
         }
+    }
+
+    public void SetSpecialInfoNumber(int value)
+    {
+        EnsureSpecialInfoInstance();
+        if (specialInfoInstance == null) return;
+        specialInfoInstance.SetNumber(value);
+    }
+
+    public void HideSpecialInfo()
+    {
+        // Se nunca foi instanciado, não há nada pra esconder — evita criar só pra esconder.
+        if (specialInfoInstance == null) return;
+        specialInfoInstance.Hide();
+    }
+
+    private void EnsureSpecialInfoInstance()
+    {
+        if (specialInfoInstance != null) return;
+        if (specialInfoDisplayPrefab == null) return;
+
+        GameObject go = Instantiate(specialInfoDisplayPrefab, rect);
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        float badgeSize = rect.rect.width * specialInfoSizeRatio;
+
+    if (rt != null)
+    {
+        rt.anchorMin = new Vector2(1f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+
+        float insideRatio = 1f - specialInfoOverflowRatio; // 0.7 quando overflow = 0.3
+        rt.pivot = new Vector2(insideRatio, insideRatio);
+
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(badgeSize, badgeSize);
+    }
+
+        specialInfoInstance = go.GetComponent<SpecialInfoDisplay>();
+        specialInfoInstance?.SetBadgeSize(badgeSize);
     }
 }

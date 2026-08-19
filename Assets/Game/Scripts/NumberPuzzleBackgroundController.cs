@@ -1,12 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Controla os números de fundo (guia visual) mostrando onde cada peça deve terminar.
-/// Puramente visual — o NumberPuzzleManager comanda quando construir/limpar,
-/// passando a lista de posições ativas do grid e a função de cálculo de posição
-/// (que agora recebe só o índice da célula, já que cellSize é único e uniforme).
-/// </summary>
 public class NumberPuzzleBackgroundController : MonoBehaviour
 {
     [SerializeField] private GameObject backgroundTilePrefab;
@@ -15,12 +9,8 @@ public class NumberPuzzleBackgroundController : MonoBehaviour
 
     private NumberBackgroundTile[] backgroundTiles;
 
-    /// <param name="numberedTileCount">Quantas peças numeradas existem (exclui os vazios).</param>
-    /// <param name="activeCells">Posições do grid que realmente existem (activeCells[tileId] = posição correta daquele tileId).</param>
-    /// <param name="cellPositionFunc">Função que converte uma posição de grid em anchoredPosition.</param>
-    /// <param name="cellSize">Tamanho uniforme da célula (largura = altura, sempre quadrado).</param>
-    /// <param name="fontSize">Tamanho de fonte já calculado pelo manager.</param>
-    public void Build(int numberedTileCount, List<int> activeCells, System.Func<int, Vector2> cellPositionFunc, float cellSize, int fontSize)
+    public void Build(int numberedTileCount, List<int> activeCells, System.Func<int, Vector2> cellPositionFunc,
+                       float cellSize, int fontSize, HashSet<int> skipTileIds = null)
     {
         Clear();
         if (backgroundTilePrefab == null || backgroundPanel == null) return;
@@ -29,6 +19,9 @@ public class NumberPuzzleBackgroundController : MonoBehaviour
 
         for (int tileId = 0; tileId < numberedTileCount; tileId++)
         {
+            if (skipTileIds != null && skipTileIds.Contains(tileId))
+                continue; // NOVO — pula Hole, sem número-fantasma naquela posição
+
             int gridPos = activeCells[tileId];
 
             GameObject go = Instantiate(backgroundTilePrefab, backgroundPanel);

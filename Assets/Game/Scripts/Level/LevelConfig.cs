@@ -28,4 +28,6 @@ public class LevelConfig
     public int[] customBoard;
 
     public TutorialStageData tutorialStage;
+
+    public List<SpecialTileData> specialTiles;
 }

@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
+  m_Name: Level_14_Lock_Rock - 41 Movimentos 38s
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelName: "N\xEDvel"
+  boardSizeMobile: {x: 800, y: 1300}
+  boardSizePC: {x: 800, y: 800}
+  customBorderThickness: 80
+  gridWidth: 3
+  gridHeight: 7
+  specialTiles:
+  - tileId: 3
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  - tileId: 0
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  - tileId: 4
+    type: 4
+    rockHitsRequired: 0
+    lockRequiredKeys: 2
+  - tileId: 7
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  - tileId: 1
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 8
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  disabledCells: 06000000090000000e00000011000000
+  emptyTileCount: 6
+  mode: 1
+  shuffleMoves: 120
+  seed: 12345
+  customArrangement: 07000000020000000b000000040000000a000000000000000c0000000d000000140000000f00000012000000030000001000000001000000080000000500000013000000
+  tutorialStage: {fileID: 0}
