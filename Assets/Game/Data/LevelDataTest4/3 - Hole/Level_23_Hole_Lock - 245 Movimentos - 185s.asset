@@ -10,51 +10,71 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_9_Rock_Lock - 89 Movimentos 125 m (Maria)
+  m_Name: Level_23_Hole_Lock - 245 Movimentos - 185s
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: "N\xEDvel"
   boardSizeMobile: {x: 800, y: 1300}
   boardSizePC: {x: 800, y: 800}
-  customBorderThickness: 80
-  gridWidth: 4
-  gridHeight: 7
+  customBorderThickness: 0
+  gridWidth: 5
+  gridHeight: 6
   specialTiles:
-  - tileId: 0
-    type: 5
-    rockHitsRequired: 0
-    lockRequiredKeys: 0
-  - tileId: 3
-    type: 5
-    rockHitsRequired: 0
-    lockRequiredKeys: 0
-  - tileId: 9
-    type: 4
+  - tileId: 8
+    type: 1
     rockHitsRequired: 0
     lockRequiredKeys: 0
   - tileId: 10
     type: 4
     rockHitsRequired: 0
+    lockRequiredKeys: 3
+  - tileId: 0
+    type: 4
+    rockHitsRequired: 0
+    lockRequiredKeys: 3
+  - tileId: 3
+    type: 5
+    rockHitsRequired: 0
     lockRequiredKeys: 0
-  - tileId: 1
-    type: 2
-    rockHitsRequired: 2
+  - tileId: 6
+    type: 5
+    rockHitsRequired: 0
     lockRequiredKeys: 0
-  - tileId: 2
-    type: 2
-    rockHitsRequired: 2
+  - tileId: 9
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 16
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 14
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 17
+    type: 1
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 15
+    type: 5
+    rockHitsRequired: 0
     lockRequiredKeys: 0
   - tileId: 4
     type: 2
     rockHitsRequired: 2
     lockRequiredKeys: 0
-  - tileId: 5
+  - tileId: 7
     type: 2
     rockHitsRequired: 2
     lockRequiredKeys: 0
-  disabledCells: 0300000002000000070000000b0000000600000001000000130000001600000019000000170000001b0000001a000000
+  - tileId: 11
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  disabledCells: 0a0000000b000000100000000f000000040000001d0000001900000000000000
   emptyTileCount: 4
   mode: 1
   shuffleMoves: 120
   seed: 12345
-  customArrangement: 040000000f0000000c0000000000000009000000180000000a0000000800000012000000140000000e0000001100000015000000050000000d00000010000000
+  customArrangement: 020000000d0000000700000005000000010000000300000009000000080000000c000000060000000e0000001a0000001100000012000000140000001c000000150000001700000018000000160000001b00000013000000
   tutorialStage: {fileID: 0}

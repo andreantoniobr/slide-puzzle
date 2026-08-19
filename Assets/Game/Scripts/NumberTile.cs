@@ -52,6 +52,13 @@ public class NumberTile : MonoBehaviour,
     public Image    highlightOverlay;
     public TMP_Text numberText;
 
+    [Header("Exibição de Informação Especial (genérico)")]
+    [SerializeField] private GameObject specialInfoDisplayPrefab; // prefab, instanciado só quando necessário
+    [SerializeField, Range(0f, 1f)] private float specialInfoOverflowRatio = 0.3f;
+    [SerializeField, Range(0.1f, 1f)] private float specialInfoSizeRatio = 0.4f;
+
+    private SpecialInfoDisplay specialInfoInstance;
+
     [Header("Glow de Posição Correta")]
     [SerializeField] private TileCorrectGlowEffect correctGlowEffect;
 
@@ -104,7 +111,9 @@ public class NumberTile : MonoBehaviour,
     [SerializeField] private ParticleSystem lockOpenParticlesB;
 
     private int rockHitsRemaining;
-    private int lockKeysRemaining;
+    private int lockRequiredKeys; // total necessário — fixo durante o nível, não decrementa mais individualmente
+
+    public int LockRequiredKeys => lockRequiredKeys;
 
     // ────────────────────────────────────────────────────────────────
     //  Eventos públicos
@@ -175,12 +184,11 @@ public class NumberTile : MonoBehaviour,
     {
         specialType = data.type;
         rockHitsRemaining = data.rockHitsRequired;
-        lockKeysRemaining = data.lockRequiredKeys;
+        lockRequiredKeys = data.lockRequiredKeys; // NOVO nome
 
-        // Pré-registra o estado atual como baseline, para que o Refresh() abaixo
-        // NÃO trate "já estar na posição correta agora" como uma transição real —
-        // isso é chamado antes do embaralhamento, é só o estado de fábrica.
         wasQuestionRevealed = (specialType == SpecialTileType.Question) && IsInCorrectPosition();
+
+        HideSpecialInfo(); // NOVO — começa escondido, o Manager decide quando mostrar
 
         Refresh();
     }
@@ -319,21 +327,18 @@ public class NumberTile : MonoBehaviour,
     {
         specialType = SpecialTileType.Normal;
         Refresh();
-    }
+    }   
 
-    public int LockRemainingKeys => lockKeysRemaining;
-
-    /// <summary>Consome uma chave — se chegar a zero, o cadeado vira Normal.</summary>
-    public void ConsumeLockKey()
+    
+    public void OpenLock()
     {
-        lockKeysRemaining--;
-        if (lockKeysRemaining <= 0)
-        {
-            specialType = SpecialTileType.Normal;
-            if (lockOpenParticlesA != null) lockOpenParticlesA.Play(); 
-            if (lockOpenParticlesB != null) lockOpenParticlesB.Play();
-            LockOpenEvent?.Invoke();
-        }
+        specialType = SpecialTileType.Normal;
+
+        if (lockOpenParticlesA != null) lockOpenParticlesA.Play();
+        if (lockOpenParticlesB != null) lockOpenParticlesB.Play();
+
+        HideSpecialInfo();
+        LockOpenEvent?.Invoke();
         Refresh();
     }
 
@@ -530,5 +535,45 @@ public class NumberTile : MonoBehaviour,
         {
             background.color = originalBackgroundColor;
         }
+    }
+
+    public void SetSpecialInfoNumber(int value)
+    {
+        EnsureSpecialInfoInstance();
+        if (specialInfoInstance == null) return;
+        specialInfoInstance.SetNumber(value);
+    }
+
+    public void HideSpecialInfo()
+    {
+        // Se nunca foi instanciado, não há nada pra esconder — evita criar só pra esconder.
+        if (specialInfoInstance == null) return;
+        specialInfoInstance.Hide();
+    }
+
+    private void EnsureSpecialInfoInstance()
+    {
+        if (specialInfoInstance != null) return;
+        if (specialInfoDisplayPrefab == null) return;
+
+        GameObject go = Instantiate(specialInfoDisplayPrefab, rect);
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        float badgeSize = rect.rect.width * specialInfoSizeRatio;
+
+    if (rt != null)
+    {
+        rt.anchorMin = new Vector2(1f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+
+        float insideRatio = 1f - specialInfoOverflowRatio; // 0.7 quando overflow = 0.3
+        rt.pivot = new Vector2(insideRatio, insideRatio);
+
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(badgeSize, badgeSize);
+    }
+
+        specialInfoInstance = go.GetComponent<SpecialInfoDisplay>();
+        specialInfoInstance?.SetBadgeSize(badgeSize);
     }
 }

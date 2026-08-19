@@ -447,6 +447,9 @@ MonoBehaviour:
   background: {fileID: 7478704338609438618}
   highlightOverlay: {fileID: 8090017851479211408}
   numberText: {fileID: 5432264214082607299}
+  specialInfoDisplayPrefab: {fileID: 708768834767374969, guid: c944474576ec5aa46842816cef0eded6, type: 3}
+  specialInfoOverflowRatio: 0.3
+  specialInfoSizeRatio: 0.4
   correctGlowEffect: {fileID: 5314018518069609022}
   correctIndex: 0
   correctGridPosition: 0

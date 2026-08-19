@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_Hole - 54 Movimentos
+  m_Name: Level_Hole - Giradouro - 391 Movimentos
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: "N\xEDvel"
   boardSizeMobile: {x: 800, y: 800}
   boardSizePC: {x: 800, y: 800}
   customBorderThickness: 0
-  gridWidth: 3
-  gridHeight: 4
+  gridWidth: 5
+  gridHeight: 5
   specialTiles:
-  - tileId: 4
+  - tileId: 6
     type: 1
     rockHitsRequired: 0
     lockRequiredKeys: 0
-  disabledCells: 
-  emptyTileCount: 3
+  disabledCells: 000000000100000005000000030000000900000004000000130000001700000018000000150000000f00000014000000
+  emptyTileCount: 2
   mode: 1
-  shuffleMoves: 120
+  shuffleMoves: 240
   seed: 12345
-  customArrangement: 01000000050000000000000007000000040000000b00000008000000090000000300000002000000060000000a000000
+  customArrangement: 07000000020000000e0000000a000000060000000b0000000c00000016000000080000000d000000120000001000000011000000
   tutorialStage: {fileID: 0}

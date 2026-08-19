@@ -10,31 +10,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_5_Rock - 3x3 - 2 Vazios - 11 Movimentos 1
+  m_Name: Level_9_Lock - 37 Movimentos - 120s
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: "N\xEDvel"
   boardSizeMobile: {x: 800, y: 800}
   boardSizePC: {x: 800, y: 800}
   customBorderThickness: 0
   gridWidth: 3
-  gridHeight: 3
+  gridHeight: 5
   specialTiles:
-  - tileId: 0
-    type: 2
-    rockHitsRequired: 2
+  - tileId: 7
+    type: 4
+    rockHitsRequired: 0
+    lockRequiredKeys: 1
+  - tileId: 6
+    type: 5
+    rockHitsRequired: 0
     lockRequiredKeys: 0
-  - tileId: 2
-    type: 2
-    rockHitsRequired: 2
-    lockRequiredKeys: 0
-  - tileId: 4
-    type: 2
-    rockHitsRequired: 2
-    lockRequiredKeys: 0
-  disabledCells: 0000000003000000
-  emptyTileCount: 2
+  disabledCells: 0600000008000000
+  emptyTileCount: 4
   mode: 1
   shuffleMoves: 120
   seed: 12345
-  customArrangement: 05000000080000000100000002000000070000000600000004000000
+  customArrangement: 010000000000000005000000030000000c000000090000000d000000070000000e00000002000000040000000a0000000b000000
   tutorialStage: {fileID: 0}

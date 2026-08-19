@@ -10,27 +10,43 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
-  m_Name: Level_Lock - 37 Movimentos - 120 s - Dificil
+  m_Name: Level_19_Hole_lock - 114 Movimentos - 82s
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelName: "N\xEDvel"
-  boardSizeMobile: {x: 800, y: 800}
+  boardSizeMobile: {x: 800, y: 1300}
   boardSizePC: {x: 800, y: 800}
   customBorderThickness: 0
-  gridWidth: 3
+  gridWidth: 5
   gridHeight: 5
   specialTiles:
-  - tileId: 7
+  - tileId: 10
+    type: 1
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 2
+    type: 4
+    rockHitsRequired: 0
+    lockRequiredKeys: 2
+  - tileId: 9
     type: 4
     rockHitsRequired: 0
     lockRequiredKeys: 1
-  - tileId: 6
+  - tileId: 3
     type: 5
     rockHitsRequired: 0
     lockRequiredKeys: 0
-  disabledCells: 0600000008000000
+  - tileId: 7
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 8
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  disabledCells: 0000000004000000150000000f00000014000000170000001800000013000000
   emptyTileCount: 4
   mode: 1
-  shuffleMoves: 120
+  shuffleMoves: 280
   seed: 12345
-  customArrangement: 010000000000000005000000030000000c000000090000000d000000070000000e00000002000000040000000a0000000b000000
+  customArrangement: 030000000b000000070000000a0000000600000001000000090000000e00000005000000160000000c000000120000000d00000011000000080000000200000010000000
   tutorialStage: {fileID: 0}

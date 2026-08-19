@@ -285,16 +285,31 @@ public class NumberPuzzleManager : MonoBehaviour
         {
             if (lockTile.specialType != SpecialTileType.Lock) continue;
 
+            var adjacentKeys = new List<NumberTile>();
             foreach (int neighborPos in GetValidNeighbors(lockTile.currentIndex))
             {
                 NumberTile neighbor = GetTileAtIndex(neighborPos);
                 if (neighbor != null && neighbor.specialType == SpecialTileType.Key)
-                {
-                    neighbor.ConvertToNormal();
-                    lockTile.ConsumeLockKey();
+                    adjacentKeys.Add(neighbor);
+            }
 
-                    if (lockTile.LockRemainingKeys <= 0) break;
-                }
+            int required = lockTile.LockRequiredKeys;
+
+            if (adjacentKeys.Count >= required)
+            {
+                foreach (NumberTile key in adjacentKeys)
+                    key.ConvertToNormal();
+
+                lockTile.OpenLock();
+            }
+            else if (required > 1) // só mostra o número se precisar de mais de 1 chave
+            {
+                int remaining = required - adjacentKeys.Count;
+                lockTile.SetSpecialInfoNumber(remaining);
+            }
+            else
+            {
+                lockTile.HideSpecialInfo(); // garante que fique escondido quando required == 1
             }
         }
     }
@@ -699,6 +714,7 @@ public class NumberPuzzleManager : MonoBehaviour
         RefreshVisualPositions();
         RefreshAllColors();
         UpdateMovesUI();
+        ResolveLockKeyAdjacency();
 
         SaveInitialState();
         puzzleStartTime = Time.time;
@@ -761,6 +777,7 @@ public class NumberPuzzleManager : MonoBehaviour
 
         RefreshVisualPositions();
         RefreshAllColors();
+        ResolveLockKeyAdjacency();
         UpdateMovesUI();
 
         SaveInitialState();
@@ -793,6 +810,7 @@ public class NumberPuzzleManager : MonoBehaviour
 
         RefreshVisualPositions();
         RefreshAllColors();
+        ResolveLockKeyAdjacency();
         UpdateMovesUI();
 
         puzzleStartTime = Time.time;

@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a30b066329e4242a1d1b7da8d6dfe5, type: 3}
+  m_Name: Level_11_Lock_Rock - 89 Movimentos - 125s
+  m_EditorClassIdentifier: Assembly-CSharp::LevelData
+  levelName: "N\xEDvel"
+  boardSizeMobile: {x: 800, y: 1300}
+  boardSizePC: {x: 800, y: 800}
+  customBorderThickness: 80
+  gridWidth: 4
+  gridHeight: 7
+  specialTiles:
+  - tileId: 0
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 3
+    type: 5
+    rockHitsRequired: 0
+    lockRequiredKeys: 0
+  - tileId: 9
+    type: 4
+    rockHitsRequired: 0
+    lockRequiredKeys: 1
+  - tileId: 10
+    type: 4
+    rockHitsRequired: 0
+    lockRequiredKeys: 1
+  - tileId: 1
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  - tileId: 2
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  - tileId: 4
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  - tileId: 5
+    type: 2
+    rockHitsRequired: 2
+    lockRequiredKeys: 0
+  disabledCells: 0300000002000000070000000b0000000600000001000000130000001600000019000000170000001b0000001a000000
+  emptyTileCount: 4
+  mode: 1
+  shuffleMoves: 120
+  seed: 12345
+  customArrangement: 040000000f0000000c0000000000000009000000180000000a0000000800000012000000140000000e0000001100000015000000050000000d00000010000000
+  tutorialStage: {fileID: 0}
