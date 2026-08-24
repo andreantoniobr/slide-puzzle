@@ -947,7 +947,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d792f611acf7fe458df3bbe069df200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelManager
-  levelDatabase: {fileID: 11400000, guid: 36bd41b650631394d8ebefd0c723148f, type: 2}
+  levelDatabase: {fileID: 11400000, guid: 8417af442ae22b84a854fe501ca7692b, type: 2}
   puzzleManager: {fileID: 634331315}
   tutorialOverlay: {fileID: 1657637551}
 --- !u!4 &726740075
